@@ -1,0 +1,126 @@
+// ==============================================================================
+// PRISMA DATABASE SCHEMA - SYSTEM ZARZĄDZANIA REDAKCJĄ (ETAP 5)
+// ==============================================================================
+// Ten plik definiuje model danych przystosowany do bazy SQLite w celu
+// bezproblemowego uruchomienia lokalnego bez dodatkowych kontenerów.
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ------------------------------------------------------------------------------
+// MODELE BAZODANOWE (Tabele)
+// ------------------------------------------------------------------------------
+
+// Tabela użytkowników - przechowuje dane kont, role i daty
+model User {
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  passwordHash     String
+  name             String
+  role             String           @default("AUTHOR") // ADMIN, EDITOR, AUTHOR, REVIEWER (Zarządzane w TS)
+  createdAt        DateTime         @default(now())
+  
+  // Relacje (1:N)
+  authoredArticles Article[]        @relation("AuthoredArticles")
+  reviewedArticles Article[]        @relation("ReviewedArticles")
+  comments         ArticleComment[]
+  historyEntries   ArticleHistory[]
+  notifications    Notification[]
+  activityLogs     ActivityLog[]
+}
+
+// Tabela artykułów - kluczowy element workflowu
+model Article {
+  id          Int            @id @default(autoincrement())
+  title       String
+  lead        String
+  content     String
+  status      String         @default("IDEA") // IDEA, DRAFT, REVIEW, APPROVED, SCHEDULED, PUBLISHED, REJECTED
+  authorId    Int
+  reviewerId  Int?           // Może być przypisany recenzent
+  scheduledAt DateTime?      // Data planowanej publikacji
+  publishedAt DateTime?      // Kiedy tekst został faktycznie opublikowany
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relacje
+  author      User           @relation("AuthoredArticles", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewer    User?          @relation("ReviewedArticles", fields: [reviewerId], references: [id], onDelete: SetNull)
+  comments    ArticleComment[]
+  history     ArticleHistory[]
+  uploads     Upload[]
+}
+
+// Komentarze i uwagi redakcyjne do artykułów
+model ArticleComment {
+  id        Int      @id @default(autoincrement())
+  articleId Int
+  userId    Int
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relacje
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Historia zmian statusów (do audytu i śledzenia drogi tekstu)
+model ArticleHistory {
+  id         Int           @id @default(autoincrement())
+  articleId  Int
+  userId     Int           // Kto dokonał zmiany
+  oldStatus  String?
+  newStatus  String
+  changedAt  DateTime      @default(now())
+  comment    String?
+
+  // Relacje
+  article    Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Powiadomienia w systemie (np. o zmianie statusu artykułu)
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      // Odbiorca powiadomienia
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Relacje
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Pliki graficzne i załączniki przypisane do artykułów
+model Upload {
+  id         Int      @id @default(autoincrement())
+  articleId  Int
+  filename   String   // Oryginalna nazwa pliku
+  filepath   String   // Ścieżka lokalna (lub URL w chmurze)
+  mimetype   String   // Typ mime np. image/jpeg
+  size       Int      // Rozmiar w bajtach
+  uploadedAt DateTime @default(now())
+
+  // Relacje
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+// Ogólne logi systemowe dla celów diagnostycznych i audytowych admina
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     // Może być null (np. akcje systemowe)
+  action    String   // Typ akcji np. "USER_LOGIN", "ARTICLE_PUBLISHED"
+  details   String?
+  createdAt DateTime @default(now())
+
+  // Relacje
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
