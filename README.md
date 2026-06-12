@@ -17,7 +17,7 @@ Projekt został zrealizowany w strukturze **Monorepo** przy użyciu **npm worksp
 
 ### Frontend:
 - **Core**: React + Vite + TypeScript
-- **Styling**: Nowoczesny **Vanilla CSS** (ciemny motyw - dark mode, glassmorphism, zmienne CSS, flexbox/grid, płynne mikro-animacje).
+- **Styling**: Nowoczesny **Vanilla CSS** (motyw jasny - light mode, płaski portalowy styl z czerwonymi akcentami, ciemny Slate Navy sidebar, pełna responsywność RWD na telefonach/tabletach, płynne mikro-animacje).
 - **Biblioteka ikon**: Lucide React
 - **Wykresy**: Recharts (statystyki artykułów na Dashboardzie)
 - **Komunikacja z API**: Axios z interceptorem automatycznie wstrzykującym JWT Bearer Token.
@@ -166,3 +166,7 @@ Podczas prac podjęto kilka kluczowych decyzji architektonicznych:
    *Uzasadnienie*: Wdrożenie podglądu tekstu bez pobierania zewnętrznych bibliotek (jak react-markdown) ogranicza wielkość bundlera i uniezależnia projekt od pobierania z npm. Napisany w JavaScript parser wykorzystuje regex do konwersji najważniejszych znaczników (`#`, `##`, `**`, `*`, list `-` oraz bloków kodu \`\`\`), zapewniając bezpieczną konwersję znaków przed renderowaniem (ochrona przed XSS).
 4. **WebSocket Room Routing w Socket.IO**:
    *Uzasadnienie*: Zamiast wysyłać komunikaty (broadcast) do wszystkich użytkowników o zmianie statusu (co marnuje pasmo), Socket.IO na backendzie przypisuje zalogowanych użytkowników do dedykowanych pokoi `user:${id}` oraz `role:${role}`. Pozwala to na precyzyjne kierowanie powiadomień merytorycznych wyłącznie do zainteresowanych osób (np. autor dowiaduje się o akceptacji swojego tekstu bezpośrednio).
+5. **Makieta Strony Głównej Portalu (Wmedia Live)**:
+   *Uzasadnienie*: Zamiast suchego panelu administracyjnego statystyk, na pulpicie głównym wdrożono interaktywny podgląd strony głównej portalu sportowego. Pobiera on w czasie rzeczywistym bazowe artykuły, dając redakcji natychmiastową symulację tego, jak ich nagłówki i zdjęcia zaprezentują się na żywo w serwisie.
+6. **Wielofunkcyjny Workspace i Pełna Responsywność (RWD)**:
+   *Uzasadnienie*: Przełącznik trybów podglądu (Split, Tylko edycja, Pełny podgląd) w połączeniu z responsywnym arkuszem stylów CSS rozwiązuje problem ściskania kolumn na tabletach i smartfonach, zapewniając komfortową pracę na dowolnym urządzeniu i z zachowaniem spójnej tożsamości wizualnej Wmedia.
