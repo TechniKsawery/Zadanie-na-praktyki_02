@@ -17,9 +17,11 @@ import {
   PlusCircle, 
   Calendar as CalendarIcon, 
   ShieldAlert,
-  Activity
+  Activity,
+  Newspaper,
+  TrendingUp
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   BarChart, 
   Bar, 
@@ -30,20 +32,43 @@ import {
   Cell 
 } from 'recharts';
 
+const getMockCategoryAndGradient = (id: number) => {
+  const categories = ['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA'];
+  const gradients = [
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+    'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+    'linear-gradient(135deg, #a6c0fe 0%, #f1a7f1 100%)',
+    'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)'
+  ];
+  return {
+    category: categories[id % categories.length],
+    gradient: gradients[id % gradients.length]
+  };
+};
+
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'portal' | 'stats'>('portal');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/stats');
-      setStats(response.data.stats);
+      const [statsRes, articlesRes] = await Promise.all([
+        api.get('/admin/stats'),
+        api.get('/articles')
+      ]);
+      setStats(statsRes.data.stats);
+      setArticles(articlesRes.data.articles || articlesRes.data || []);
     } catch (err: any) {
-      console.error('Błąd pobierania statystyk:', err);
-      setError('Nie udało się załadować danych statystycznych.');
+      console.error('Błąd pobierania danych pulpitu:', err);
+      setError('Nie udało się załadować danych statystycznych oraz artykułów.');
     } finally {
       setLoading(false);
     }
@@ -94,8 +119,8 @@ export const Dashboard: React.FC = () => {
 
   if (loading && !stats) {
     return (
-      <div style={{ textAlign: 'center', padding: '100px 0', color: '#9ca3af' }}>
-        Ładowanie statystyk pulpitu...
+      <div style={{ textAlign: 'center', padding: '100px 0', color: '#9ca3af', fontFamily: 'Outfit, sans-serif', fontWeight: 600 }}>
+        Ładowanie statystyk i artykułów pulpitu...
       </div>
     );
   }
@@ -103,189 +128,583 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="animate-slide-in">
       {/* Nagłówek powitalny */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '8px' }}>
-          Witaj, {user?.name}!
-        </h1>
-        <p style={{ color: '#9ca3af', fontSize: '0.98rem' }}>
-          Oto bieżący stan prac redakcyjnych. Twoja rola to:{' '}
-          <strong style={{ color: '#6366f1' }}>{user?.role}</strong>.
-        </p>
+      <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '6px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+            Dzień dobry, {user?.name}!
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>
+            Zarządzasz systemem automatyzacji redakcji. Rola:{' '}
+            <strong style={{ color: 'var(--color-primary)', textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '0.05em' }}>{user?.role}</strong>.
+          </p>
+        </div>
+        <div style={{
+          backgroundColor: '#ffffff',
+          border: '1px solid var(--border-light)',
+          padding: '8px 16px',
+          borderRadius: '30px',
+          fontSize: '0.8rem',
+          fontWeight: 700,
+          color: 'var(--text-secondary)',
+          boxShadow: 'var(--shadow-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+          Wydanie Główne Wmedia: Aktywne
+        </div>
       </div>
 
       {error && (
         <div style={{
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
+          backgroundColor: 'rgba(220, 38, 38, 0.08)',
+          border: '1px solid rgba(220, 38, 38, 0.2)',
           padding: '16px',
           borderRadius: '8px',
-          color: '#fca5a5',
-          marginBottom: '24px'
+          color: '#b91c1c',
+          marginBottom: '24px',
+          fontWeight: 600
         }}>
           {error}
         </div>
       )}
 
-      {/* Grid z licznikami statystycznymi */}
-      {stats && (
-        <div className="stats-grid">
-          <div className="glass-panel stat-card">
-            <div>
-              <div className="stat-title">Artykuły</div>
-              <div className="stat-value">{stats.counters.articles}</div>
-            </div>
-            <div className="stat-icon">
-              <FileText size={24} />
-            </div>
-          </div>
-
-          <div className="glass-panel stat-card">
-            <div>
-              <div className="stat-title">Dyskusje / Uwagi</div>
-              <div className="stat-value">{stats.counters.comments}</div>
-            </div>
-            <div className="stat-icon" style={{ color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.1)' }}>
-              <MessageSquare size={24} />
-            </div>
-          </div>
-
-          <div className="glass-panel stat-card">
-            <div>
-              <div className="stat-title">Załączniki</div>
-              <div className="stat-value">{stats.counters.uploads}</div>
-            </div>
-            <div className="stat-icon" style={{ color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.1)' }}>
-              <UploadIcon size={24} />
-            </div>
-          </div>
-
-          <div className="glass-panel stat-card">
-            <div>
-              <div className="stat-title">Redaktorzy</div>
-              <div className="stat-value">{stats.counters.users}</div>
-            </div>
-            <div className="stat-icon" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
-              <Users size={24} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '24px',
-        marginBottom: '32px'
-      }}>
-        {/* Wykres statusów */}
-        <div className="glass-panel" style={{ padding: '24px', minHeight: '360px', display: 'flex', flexDirection: 'column' }}>
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            Rozkład Statusów Tekstów
-          </h3>
-          <div style={{ flex: 1, width: '100%', minHeight: '260px' }}>
-            {chartData.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '80px 0', color: '#6b7280' }}>
-                Brak danych do wygenerowania wykresu.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} />
-                  <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} tickLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#12121e', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px' }}
-                    labelStyle={{ fontWeight: 'bold', color: '#fff' }}
-                  />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry: any, index) => (
-                      <Cell key={`cell-${index}`} fill={statusColors[entry.statusKey as ArticleStatus] || '#6366f1'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        {/* Panel Szybkich Akcji */}
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '4px' }}>Skróty Klawiszowe</h3>
-          <p style={{ color: '#9ca3af', fontSize: '0.85rem', marginBottom: '8px' }}>
-            Szybki dostęp do najczęstszych akcji w systemie:
-          </p>
-
-          <Link to="/articles" className="btn btn-secondary" style={{ justifyContent: 'flex-start', width: '100%' }}>
-            <FileText size={18} /> Przejdź do bazy artykułów
-          </Link>
-
-          {(user?.role === Role.AUTHOR || user?.role === Role.ADMIN) && (
-            <Link to="/articles" className="btn btn-primary" style={{ justifyContent: 'flex-start', width: '100%' }}>
-              <PlusCircle size={18} /> Utwórz nowy pomysł/szkic
-            </Link>
-          )}
-
-          <Link to="/calendar" className="btn btn-secondary" style={{ justifyContent: 'flex-start', width: '100%' }}>
-            <CalendarIcon size={18} /> Otwórz kalendarz publikacji
-          </Link>
-
-          {user?.role === Role.ADMIN && (
-            <Link to="/admin" className="btn btn-danger" style={{ justifyContent: 'flex-start', width: '100%' }}>
-              <ShieldAlert size={18} /> Zarządzaj rolami redakcji
-            </Link>
-          )}
-        </div>
+      {/* Przełącznik Widoków Dashboardu */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('portal')}
+          style={{
+            padding: '10px 18px',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            borderRadius: '6px',
+            border: '1px solid var(--border-light)',
+            backgroundColor: activeTab === 'portal' ? 'var(--color-primary)' : '#ffffff',
+            color: activeTab === 'portal' ? '#ffffff' : 'var(--text-primary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            boxShadow: 'var(--shadow-sm)',
+            outline: 'none'
+          }}
+        >
+          <Newspaper size={18} /> Makieta Portalu (Wmedia Live)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('stats')}
+          style={{
+            padding: '10px 18px',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            borderRadius: '6px',
+            border: '1px solid var(--border-light)',
+            backgroundColor: activeTab === 'stats' ? 'var(--color-primary)' : '#ffffff',
+            color: activeTab === 'stats' ? '#ffffff' : 'var(--text-primary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s',
+            boxShadow: 'var(--shadow-sm)',
+            outline: 'none'
+          }}
+        >
+          <TrendingUp size={18} /> Statystyki & Audyt Redakcji
+        </button>
       </div>
 
-      {/* Logi Aktywności Systemowej */}
-      {stats && (
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Activity size={20} style={{ color: '#6366f1' }} />
-            Ostatnie Działania Redakcyjne
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '320px', overflowY: 'auto' }}>
-            {stats.recentLogs.length === 0 ? (
-              <div style={{ padding: '20px 0', color: '#6b7280', textAlign: 'center' }}>
-                Brak logów w systemie.
+      {activeTab === 'portal' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }} className="animate-slide-in">
+          {/* Menu kategorii portalowych - Wmedia style */}
+          <div style={{
+            display: 'flex',
+            backgroundColor: 'var(--bg-dark-sidebar)',
+            borderRadius: '8px',
+            padding: '4px 20px',
+            gap: '24px',
+            overflowX: 'auto',
+            alignItems: 'center',
+            boxShadow: 'var(--shadow-md)',
+            whiteSpace: 'nowrap'
+          }}>
+            <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '1rem', letterSpacing: '0.05em', borderRight: '2px solid #e2001a', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ color: '#e2001a' }}>wmedia</span>sport
+            </span>
+            {['PIŁKA NOŻNA', 'SIATKÓWKA', 'KOSZYKÓWKA', 'SKOKI NARCIARSKIE', 'FORMUŁA 1', 'BOKS', 'INNE'].map((cat, idx) => (
+              <span 
+                key={idx} 
+                style={{ 
+                  color: idx === 0 ? '#e2001a' : '#cbd5e1', 
+                  fontSize: '0.78rem', 
+                  fontWeight: 800, 
+                  cursor: 'pointer', 
+                  padding: '12px 0', 
+                  transition: 'color 0.2s' 
+                }}
+                onMouseEnter={(e) => idx !== 0 && (e.currentTarget.style.color = '#ffffff')}
+                onMouseLeave={(e) => idx !== 0 && (e.currentTarget.style.color = '#cbd5e1')}
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
+
+          {/* Główna sekcja: Lewa (Hero) + Prawa (List) */}
+          <div className="portal-main-grid">
+            {/* Lewa kolumna: Hero Artykuł */}
+            <div>
+              {articles.length === 0 ? (
+                <div style={{ padding: '80px 20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                  Brak artykułów w bazie danych. Dodaj nowy temat w bazie artykułów!
+                </div>
+              ) : (() => {
+                const heroArticle = articles.find(a => a.status === ArticleStatus.PUBLISHED) || articles[0];
+                const { category, gradient } = getMockCategoryAndGradient(heroArticle.id);
+                const hasImage = heroArticle.uploads && heroArticle.uploads.length > 0 && heroArticle.uploads.some((up: any) => up.mimetype.startsWith('image/'));
+                const imagePath = hasImage ? heroArticle.uploads.find((up: any) => up.mimetype.startsWith('image/'))?.filepath : null;
+
+                return (
+                  <div 
+                    onClick={() => navigate(`/articles/${heroArticle.id}`)}
+                    style={{
+                      cursor: 'pointer',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-light)',
+                      overflow: 'hidden',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                    }}
+                  >
+                    {imagePath ? (
+                      <div style={{ position: 'relative', height: '380px', width: '100%', overflow: 'hidden' }}>
+                        <img 
+                          src={`http://localhost:5000${imagePath}`} 
+                          alt={heroArticle.title} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                        <div style={{ position: 'absolute', top: '20px', left: '20px', backgroundColor: '#e2001a', color: '#ffffff', fontSize: '0.75rem', fontWeight: 900, padding: '4px 10px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                          WYDANIE GŁÓWNE
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ position: 'relative', height: '360px', width: '100%', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>
+                        📰
+                        <div style={{ position: 'absolute', top: '20px', left: '20px', backgroundColor: '#e2001a', color: '#ffffff', fontSize: '0.75rem', fontWeight: 900, padding: '4px 10px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                          WYDANIE GŁÓWNE
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ padding: '24px' }}>
+                      <span style={{ color: '#e2001a', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
+                        {category}
+                      </span>
+                      <h2 style={{ fontSize: '1.9rem', fontWeight: 900, lineHeight: '1.25', color: '#0f172a', marginBottom: '12px', fontFamily: 'Outfit' }}>
+                        {heroArticle.title}
+                      </h2>
+                      <p style={{ color: '#475569', fontSize: '0.98rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                        {heroArticle.lead || 'Brak opisu wstępnego dla tego artykułu.'}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: 'var(--color-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                          {heroArticle.author.name[0].toUpperCase()}
+                        </div>
+                        <span>{heroArticle.author.name}</span>
+                        <span>•</span>
+                        <span>⏱️ {Math.max(1, Math.round((heroArticle.content || '').split(/\s+/).length / 180))} min czytania</span>
+                        <span>•</span>
+                        <span style={{ textTransform: 'uppercase', color: heroArticle.status === ArticleStatus.PUBLISHED ? '#0891b2' : '#d97706' }}>
+                          {heroArticle.status === ArticleStatus.PUBLISHED ? 'Opublikowano' : 'W redakcji'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Prawa kolumna: Najnowsze wiadomości */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '8px',
+              border: '1px solid var(--border-light)',
+              padding: '24px',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.05em', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+                Najnowsze w redakcji
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto', maxHeight: '520px', paddingRight: '4px' }}>
+                {articles.slice(1, 8).map((art, index) => {
+                  const timeStr = new Date(art.updatedAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                  const { category } = getMockCategoryAndGradient(art.id);
+                  return (
+                    <div 
+                      key={art.id} 
+                      onClick={() => navigate(`/articles/${art.id}`)}
+                      style={{ 
+                        paddingBottom: '14px', 
+                        borderBottom: index === articles.slice(1, 8).length - 1 ? 'none' : '1px solid #f1f5f9',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        const titleEl = e.currentTarget.querySelector('h4');
+                        if (titleEl) titleEl.style.color = 'var(--color-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        const titleEl = e.currentTarget.querySelector('h4');
+                        if (titleEl) titleEl.style.color = '#1e293b';
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', fontWeight: 800 }}>
+                        <span style={{ color: '#ef4444' }}>{timeStr}</span>
+                        <span style={{ color: '#64748b', textTransform: 'uppercase' }}>{category}</span>
+                      </div>
+                      <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', lineHeight: '1.4', transition: 'color 0.2s' }}>
+                        {art.title}
+                      </h4>
+                    </div>
+                  );
+                })}
+                {articles.length <= 1 && (
+                  <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px 0', fontSize: '0.85rem' }}>
+                    Brak kolejnych artykułów w bazie.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Dolna sekcja: Kafelki tematów (Grid 3-kolumnowy) */}
+          <div>
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', marginBottom: '20px', fontFamily: 'Outfit' }}>
+              Polecane w serwisie
+            </h3>
+            {articles.length <= 2 ? (
+              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                Dodaj więcej artykułów, aby zapełnić grid polecanych treści!
               </div>
             ) : (
-              stats.recentLogs.map((log) => (
-                <div 
-                  key={log.id} 
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                    border: '1px solid rgba(255, 255, 255, 0.03)',
-                    borderRadius: '8px',
-                    fontSize: '0.85rem'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{
-                      backgroundColor: 'rgba(99,102,241,0.1)',
-                      color: '#6366f1',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700
-                    }}>
-                      {log.action}
-                    </span>
-                    <span style={{ color: '#d1d5db' }}>{log.details}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#6b7280', fontSize: '0.78rem' }}>
-                    <span>{log.user ? log.user.name : 'System'}</span>
-                    <span>•</span>
-                    <span>{new Date(log.createdAt).toLocaleTimeString('pl-PL')}</span>
-                  </div>
-                </div>
-              ))
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '24px'
+              }}>
+                {articles.slice(2, 8).map(art => {
+                  const { category, gradient } = getMockCategoryAndGradient(art.id);
+                  const hasImage = art.uploads && art.uploads.length > 0 && art.uploads.some((up: any) => up.mimetype.startsWith('image/'));
+                  const imagePath = hasImage ? art.uploads.find((up: any) => up.mimetype.startsWith('image/'))?.filepath : null;
+
+                  return (
+                    <div 
+                      key={art.id}
+                      onClick={() => navigate(`/articles/${art.id}`)}
+                      style={{
+                        cursor: 'pointer',
+                        backgroundColor: '#ffffff',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-light)',
+                        overflow: 'hidden',
+                        boxShadow: 'var(--shadow-sm)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                      }}
+                    >
+                      {imagePath ? (
+                        <img 
+                          src={`http://localhost:5000${imagePath}`} 
+                          alt={art.title} 
+                          style={{ width: '100%', height: '170px', objectFit: 'cover' }} 
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '170px', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>
+                          📰
+                        </div>
+                      )}
+                      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div>
+                          <span style={{ color: '#e2001a', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                            {category}
+                          </span>
+                          <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', lineHeight: '1.3', marginBottom: '8px' }}>
+                            {art.title}
+                          </h4>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4', marginBottom: '14px' }}>
+                            {art.lead ? (art.lead.length > 90 ? `${art.lead.substring(0, 90)}...` : art.lead) : 'Brak opisu.'}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>{art.author.name}</span>
+                          <span>⏱️ {Math.max(1, Math.round((art.content || '').split(/\s+/).length / 180))} min</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
+      ) : (
+        stats && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Grid z licznikami statystycznymi */}
+            <div className="stats-grid">
+              <div className="glass-panel stat-card" style={{ borderLeftColor: 'var(--color-primary)' }}>
+                <div>
+                  <div className="stat-title">Wszystkie Artykuły</div>
+                  <div className="stat-value">{stats.counters.articles}</div>
+                </div>
+                <div className="stat-icon" style={{ backgroundColor: 'rgba(226, 0, 26, 0.06)', color: 'var(--color-primary)' }}>
+                  <FileText size={24} />
+                </div>
+              </div>
+
+              <div className="glass-panel stat-card" style={{ borderLeftColor: '#a855f7' }}>
+                <div>
+                  <div className="stat-title">Uwagi & Dyskusje</div>
+                  <div className="stat-value">{stats.counters.comments}</div>
+                </div>
+                <div className="stat-icon" style={{ color: '#a855f7', backgroundColor: 'rgba(168, 85, 247, 0.06)' }}>
+                  <MessageSquare size={24} />
+                </div>
+              </div>
+
+              <div className="glass-panel stat-card" style={{ borderLeftColor: '#06b6d4' }}>
+                <div>
+                  <div className="stat-title">Wgrane Załączniki</div>
+                  <div className="stat-value">{stats.counters.uploads}</div>
+                </div>
+                <div className="stat-icon" style={{ color: '#06b6d4', backgroundColor: 'rgba(6, 182, 212, 0.06)' }}>
+                  <UploadIcon size={24} />
+                </div>
+              </div>
+
+              <div className="glass-panel stat-card" style={{ borderLeftColor: '#10b981' }}>
+                <div>
+                  <div className="stat-title">Zespół Redakcyjny</div>
+                  <div className="stat-value">{stats.counters.users}</div>
+                </div>
+                <div className="stat-icon" style={{ color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.06)' }}>
+                  <Users size={24} />
+                </div>
+              </div>
+            </div>
+
+            <div className="dashboard-main-grid">
+              {/* Wykres statusów */}
+              <div className="glass-panel" style={{ padding: '24px', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Outfit' }}>
+                  Rozkład Statusów Tekstów
+                </h3>
+                <div style={{ flex: 1, width: '100%', minHeight: '260px' }}>
+                  {chartData.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-secondary)' }}>
+                      Brak danych do wygenerowania wykresu.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                        <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={11} fontWeight={600} tickLine={false} />
+                        <YAxis stroke="var(--text-secondary)" fontSize={11} allowDecimals={false} tickLine={false} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'var(--bg-secondary)', 
+                            borderColor: 'var(--border-light)', 
+                            borderRadius: '8px',
+                            boxShadow: 'var(--shadow-md)',
+                            color: 'var(--text-primary)'
+                          }}
+                          labelStyle={{ fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}
+                          itemStyle={{ fontWeight: 600 }}
+                        />
+                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                          {chartData.map((entry: any, index) => (
+                            <Cell key={`cell-${index}`} fill={statusColors[entry.statusKey as ArticleStatus] || '#e2001a'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              {/* Panel Szybkich Akcji */}
+              <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '4px', fontFamily: 'Outfit' }}>Nawigacja Redakcyjna</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '8px', lineHeight: '1.4' }}>
+                  Szybki dostęp do kluczowych obszarów zarządzania treścią i zespołem:
+                </p>
+
+                <Link to="/articles" className="btn btn-secondary" style={{ justifyContent: 'flex-start', width: '100%' }}>
+                  <FileText size={18} style={{ color: 'var(--color-primary)' }} /> Przejdź do bazy artykułów
+                </Link>
+
+                {(user?.role === Role.AUTHOR || user?.role === Role.ADMIN) && (
+                  <Link to="/articles" className="btn btn-primary" style={{ justifyContent: 'flex-start', width: '100%' }}>
+                    <PlusCircle size={18} /> Stwórz nowy temat/szkic
+                  </Link>
+                )}
+
+                <Link to="/calendar" className="btn btn-secondary" style={{ justifyContent: 'flex-start', width: '100%' }}>
+                  <CalendarIcon size={18} style={{ color: '#65a30d' }} /> Otwórz kalendarz publikacji
+                </Link>
+
+                {user?.role === Role.ADMIN && (
+                  <Link to="/admin" className="btn btn-danger" style={{ justifyContent: 'flex-start', width: '100%' }}>
+                    <ShieldAlert size={18} /> Zarządzaj uprawnieniami zespołu
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* DOLNA SEKCJA: DZIAŁANIA REDAKCJI + LIVE ANALYTICS TRENDY */}
+            <div className="dashboard-bottom-grid">
+              {/* Logi Aktywności Systemowej */}
+              <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Outfit' }}>
+                  <Activity size={20} style={{ color: 'var(--color-primary)' }} />
+                  Dziennik Aktywności Redakcyjnej
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '380px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {stats.recentLogs.length === 0 ? (
+                    <div style={{ padding: '40px 0', color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.9rem' }}>
+                      Brak zarejestrowanych logów w systemie.
+                    </div>
+                  ) : (
+                    stats.recentLogs.map((log) => (
+                      <div 
+                        key={log.id} 
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          backgroundColor: 'var(--bg-tertiary)',
+                          border: '1px solid var(--border-light)',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                          <span style={{
+                            backgroundColor: 'rgba(226, 0, 26, 0.08)',
+                            color: 'var(--color-primary)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            flexShrink: 0
+                          }}>
+                            {log.action}
+                          </span>
+                          <span style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{log.details}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--text-secondary)', fontSize: '0.78rem', flexShrink: 0, marginLeft: '8px' }}>
+                          <span style={{ fontWeight: 600 }}>{log.user ? log.user.name : 'System'}</span>
+                          <span>•</span>
+                          <span>{new Date(log.createdAt).toLocaleTimeString('pl-PL')}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Live Portal View Analytics (Trendy portalowe z polskimi tytułami prasowymi) */}
+              <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Outfit' }}>
+                  <span style={{ display: 'flex', position: 'relative', width: '10px', height: '10px', marginRight: '4px' }}>
+                    <span style={{ position: 'absolute', width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#ef4444', opacity: 0.75, animation: 'ping 1s infinite' }} />
+                    <span style={{ position: 'relative', borderRadius: '50%', width: '10px', height: '10px', backgroundColor: '#ef4444' }} />
+                  </span>
+                  Najpopularniejsze na Portalu (Na żywo)
+                </h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '20px' }}>
+                  Bieżące statystyki odsłon artykułów opublikowanych na stronie głównej Wmedia Sport.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div className="trending-item">
+                    <div className="trending-number">01</div>
+                    <div className="trending-content">
+                      <div className="trending-title">Sensacyjny transfer reprezentanta Polski stał się faktem! Znamy kwotę umowy</div>
+                      <div className="trending-meta">
+                        <span>🔥 48.2k odsłon</span>
+                        <span>⏱️ Śr. czas: 4m 32s</span>
+                        <span>💬 128 komentarzy</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="trending-item">
+                    <div className="trending-number">02</div>
+                    <div className="trending-content">
+                      <div className="trending-title">Trzęsienie ziemi w sztabie szkoleniowym. Trener zwolniony po wczorajszej porażce</div>
+                      <div className="trending-meta">
+                        <span>📈 35.8k odsłon</span>
+                        <span>⏱️ Śr. czas: 3m 15s</span>
+                        <span>💬 94 komentarzy</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="trending-item">
+                    <div className="trending-number">03</div>
+                    <div className="trending-content">
+                      <div className="trending-title">Złoty medalista igrzysk olimpijskich szczerze o emeryturze: To był idealny moment</div>
+                      <div className="trending-meta">
+                        <span>👁️ 24.1k odsłon</span>
+                        <span>⏱️ Śr. czas: 6m 20s</span>
+                        <span>💬 41 komentarzy</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="trending-item">
+                    <div className="trending-number">04</div>
+                    <div className="trending-content">
+                      <div className="trending-title">Skandaliczne zachowanie kibiców. Klub ukarany gigantyczną grzywną i walkowerem</div>
+                      <div className="trending-meta">
+                        <span>📉 19.5k odsłon</span>
+                        <span>⏱️ Śr. czas: 2m 50s</span>
+                        <span>💬 212 komentarzy</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       )}
     </div>
   );

@@ -2,12 +2,12 @@
 // REGISTER VIEW (Widok Rejestracji)
 // ==============================================================================
 // Rejestracja nowego użytkownika w systemie z domyślną rolą Autora.
-// Posiada te same efekty premium (glassmorphism i glow) co strona logowania.
+// Posiada te same efekty premium i portalowe dopasowanie co strona logowania.
 
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, KeyRound, User, AlertCircle } from 'lucide-react';
+import { UserPlus, Mail, KeyRound, User, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const { register } = useAuth();
@@ -15,6 +15,7 @@ export const Register: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +48,7 @@ export const Register: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
-      backgroundColor: '#050508',
+      backgroundColor: 'var(--bg-primary)',
       position: 'relative',
       overflow: 'hidden'
     }}>
@@ -56,7 +57,7 @@ export const Register: React.FC = () => {
         position: 'absolute',
         width: '400px',
         height: '400px',
-        background: 'radial-gradient(circle, rgba(168,85,247,0.12) 0%, rgba(0,0,0,0) 70%)',
+        background: 'radial-gradient(circle, rgba(226,0,26,0.06) 0%, rgba(0,0,0,0) 70%)',
         top: '-100px',
         right: '-100px',
         pointerEvents: 'none'
@@ -65,7 +66,7 @@ export const Register: React.FC = () => {
         position: 'absolute',
         width: '500px',
         height: '500px',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(0,0,0,0) 70%)',
+        background: 'radial-gradient(circle, rgba(15,23,42,0.04) 0%, rgba(0,0,0,0) 70%)',
         bottom: '-150px',
         left: '-150px',
         pointerEvents: 'none'
@@ -76,23 +77,25 @@ export const Register: React.FC = () => {
         maxWidth: '440px',
         width: '100%',
         padding: '40px',
-        zIndex: 5
+        zIndex: 5,
+        backgroundColor: '#ffffff',
+        boxShadow: 'var(--shadow-lg)'
       }}>
         {/* Nagłówek */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{
             fontFamily: 'Outfit, sans-serif',
-            fontSize: '2rem',
+            fontSize: '2.2rem',
             fontWeight: 800,
-            background: 'linear-gradient(135deg, #fff 40%, #c084fc 100%)',
+            background: 'linear-gradient(135deg, var(--text-primary) 30%, var(--color-primary) 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             marginBottom: '8px'
           }}>
-            Utwórz konto
+            Dołącz do redakcji
           </h1>
-          <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-            Dołącz do redakcji i zacznij pisać teksty
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', fontWeight: 600 }}>
+            Utwórz konto w portalu i zacznij pisać teksty
           </p>
         </div>
 
@@ -102,13 +105,14 @@ export const Register: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
+            backgroundColor: 'rgba(220, 38, 38, 0.06)',
+            border: '1px solid rgba(220, 38, 38, 0.15)',
             padding: '12px 16px',
             borderRadius: '8px',
-            color: '#fca5a5',
+            color: '#b91c1c',
             fontSize: '0.85rem',
-            marginBottom: '20px'
+            marginBottom: '20px',
+            fontWeight: 600
           }}>
             <AlertCircle size={18} style={{ flexShrink: 0 }} />
             <span>{error}</span>
@@ -125,7 +129,7 @@ export const Register: React.FC = () => {
                 left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#6b7280'
+                color: 'var(--text-secondary)'
               }} />
               <input
                 type="text"
@@ -142,14 +146,14 @@ export const Register: React.FC = () => {
 
           {/* Email */}
           <div className="form-group">
-            <label className="form-label">E-mail</label>
+            <label className="form-label">Adres e-mail</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{
                 position: 'absolute',
                 left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#6b7280'
+                color: 'var(--text-secondary)'
               }} />
               <input
                 type="email"
@@ -166,25 +170,45 @@ export const Register: React.FC = () => {
 
           {/* Hasło */}
           <div className="form-group" style={{ marginBottom: '28px' }}>
-            <label className="form-label">Hasło</label>
+            <label className="form-label">Hasło dostępowe</label>
             <div style={{ position: 'relative' }}>
               <KeyRound size={18} style={{
                 position: 'absolute',
                 left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#6b7280'
+                color: 'var(--text-secondary)'
               }} />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 className="form-input"
                 placeholder="min. 6 znaków"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingLeft: '48px' }}
+                style={{ paddingLeft: '48px', paddingRight: '48px' }}
                 disabled={loading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+                title={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -192,7 +216,7 @@ export const Register: React.FC = () => {
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ width: '100%', padding: '12px', marginBottom: '24px' }}
+            style={{ width: '100%', padding: '12px', marginBottom: '24px', fontSize: '0.95rem' }}
             disabled={loading}
           >
             {loading ? (
@@ -206,16 +230,16 @@ export const Register: React.FC = () => {
               }} />
             ) : (
               <>
-                <UserPlus size={18} /> Zarejestruj się
+                <UserPlus size={18} /> Utwórz konto autora
               </>
             )}
           </button>
         </form>
 
         {/* Link do logowania */}
-        <div style={{ textAlign: 'center', fontSize: '0.88rem', color: '#9ca3af' }}>
+        <div style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
           Masz już konto?{' '}
-          <Link to="/login" style={{ fontWeight: 600, color: '#a855f7' }}>
+          <Link to="/login" style={{ fontWeight: 700, color: 'var(--color-primary)' }}>
             Zaloguj się
           </Link>
         </div>
@@ -223,4 +247,5 @@ export const Register: React.FC = () => {
     </div>
   );
 };
+
 export default Register;

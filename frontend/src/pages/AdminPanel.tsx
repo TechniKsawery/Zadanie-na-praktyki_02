@@ -95,10 +95,10 @@ export const AdminPanel: React.FC = () => {
         gap: '20px'
       }}>
         <div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '8px', color: 'var(--text-primary)' }}>
             Panel Administratora
           </h1>
-          <p style={{ color: '#9ca3af', fontSize: '0.95rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>
             Zarządzaj uprawnieniami zespołu, analizuj audyt logów i statystyki redakcji
           </p>
         </div>
@@ -116,8 +116,8 @@ export const AdminPanel: React.FC = () => {
          ------------------------------------------------------------------------ */}
       <div style={{
         display: 'flex',
-        borderBottom: '1px solid var(--border-light)',
-        marginBottom: '24px',
+        borderBottom: '2px solid var(--border-light)',
+        marginBottom: '28px',
         gap: '24px'
       }}>
         <button 
@@ -125,16 +125,17 @@ export const AdminPanel: React.FC = () => {
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'users' ? '2px solid var(--color-primary)' : '2px solid transparent',
-            color: activeTab === 'users' ? '#fff' : '#9ca3af',
+            borderBottom: activeTab === 'users' ? '3px solid var(--color-primary)' : '3px solid transparent',
+            color: activeTab === 'users' ? 'var(--color-primary)' : 'var(--text-secondary)',
             padding: '12px 6px',
             fontSize: '0.95rem',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            marginBottom: '-2px'
           }}
         >
           <Users size={18} /> Zarządzanie Zespołem
@@ -145,16 +146,17 @@ export const AdminPanel: React.FC = () => {
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'logs' ? '2px solid var(--color-primary)' : '2px solid transparent',
-            color: activeTab === 'logs' ? '#fff' : '#9ca3af',
+            borderBottom: activeTab === 'logs' ? '3px solid var(--color-primary)' : '3px solid transparent',
+            color: activeTab === 'logs' ? 'var(--color-primary)' : 'var(--text-secondary)',
             padding: '12px 6px',
             fontSize: '0.95rem',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            marginBottom: '-2px'
           }}
         >
           <Terminal size={18} /> Logi Aktywności
@@ -165,16 +167,17 @@ export const AdminPanel: React.FC = () => {
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'stats' ? '2px solid var(--color-primary)' : '2px solid transparent',
-            color: activeTab === 'stats' ? '#fff' : '#9ca3af',
+            borderBottom: activeTab === 'stats' ? '3px solid var(--color-primary)' : '3px solid transparent',
+            color: activeTab === 'stats' ? 'var(--color-primary)' : 'var(--text-secondary)',
             padding: '12px 6px',
             fontSize: '0.95rem',
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            marginBottom: '-2px'
           }}
         >
           <ChartIcon size={18} /> Szczegółowe Statystyki
@@ -188,7 +191,7 @@ export const AdminPanel: React.FC = () => {
         <div className="glass-panel animate-slide-in" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-light)', color: '#9ca3af', fontSize: '0.88rem' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                 <th style={{ padding: '16px 24px' }}>Użytkownik</th>
                 <th style={{ padding: '16px 24px' }}>Rola w systemie</th>
                 <th style={{ padding: '16px 24px' }}>Napisane teksty</th>
@@ -203,33 +206,44 @@ export const AdminPanel: React.FC = () => {
                 return (
                   <tr 
                     key={u.id}
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', backgroundColor: isSelf ? 'rgba(99,102,241,0.02)' : 'transparent' }}
+                    style={{ borderBottom: '1px solid var(--border-light)', backgroundColor: isSelf ? 'rgba(226, 0, 26, 0.02)' : 'transparent' }}
                   >
                     <td style={{ padding: '16px 24px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                        {u.name} {isSelf && <span style={{ fontSize: '0.75rem', color: '#6366f1', marginLeft: '6px' }}>(To Ty)</span>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="avatar-initials" style={{
+                          background: isSelf ? 'rgba(226, 0, 26, 0.08)' : 'var(--bg-tertiary)',
+                          color: isSelf ? 'var(--color-primary)' : 'var(--text-primary)',
+                          fontWeight: 800
+                        }}>
+                          {u.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                            {u.name} {isSelf && <span style={{ fontSize: '0.72rem', color: 'var(--color-primary)', marginLeft: '6px', fontWeight: 800 }}>(To Ty)</span>}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{u.email}</div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>{u.email}</div>
                     </td>
                     <td style={{ padding: '16px 24px' }}>
                       <span className={`badge badge-${u.role.toLowerCase()}`} style={{ fontSize: '0.7rem' }}>
                         {polishRoleLabels[u.role]}
                       </span>
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 500 }}>
+                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {u._count?.authoredArticles || 0}
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 500 }}>
+                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {u._count?.reviewedArticles || 0}
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: '#9ca3af' }}>
+                    <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                       {new Date(u.createdAt).toLocaleDateString('pl-PL')}
                     </td>
                     <td style={{ padding: '16px 24px' }}>
                       {/* Zapobiegamy zmianie własnej roli przez admina (blokada przed odebraniem sobie ADMINA) */}
                       <select
                         className="form-input form-select"
-                        style={{ width: '180px', padding: '6px 12px', fontSize: '0.82rem' }}
+                        style={{ width: '180px', padding: '6px 12px', fontSize: '0.82rem', fontWeight: 700 }}
                         value={u.role}
                         onChange={(e) => handleRoleChange(u.id, e.target.value as Role)}
                         disabled={isSelf || actionLoading === u.id}
@@ -251,9 +265,9 @@ export const AdminPanel: React.FC = () => {
          TAB 2: LOGI AKTYWNOŚCI (SYSTEM AUDIT LOGS)
          ------------------------------------------------------------------------ */}
       {activeTab === 'logs' && (
-        <div className="glass-panel animate-slide-in" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Terminal size={20} style={{ color: '#6366f1' }} /> Log systemowy (ostatnie 30 akcji)
+        <div className="glass-panel animate-slide-in" style={{ padding: '28px' }}>
+          <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Terminal size={20} style={{ color: 'var(--color-primary)' }} /> Log systemowy (ostatnie 30 akcji)
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {logs.map(log => (
@@ -262,21 +276,20 @@ export const AdminPanel: React.FC = () => {
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  padding: '12px 16px',
-                  backgroundColor: 'rgba(255,255,255,0.01)',
+                  padding: '12px 18px',
+                  backgroundColor: 'var(--bg-tertiary)',
                   border: '1px solid var(--border-light)',
                   borderRadius: '8px',
-                  fontSize: '0.82rem',
-                  fontFamily: 'monospace'
+                  fontSize: '0.85rem'
                 }}
               >
                 <div>
-                  <span style={{ color: '#a855f7', fontWeight: 'bold', marginRight: '12px' }}>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: 'bold', marginRight: '12px', fontFamily: 'monospace' }}>
                     [{log.action}]
                   </span>
-                  <span style={{ color: '#e5e7eb' }}>{log.details}</span>
+                  <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{log.details}</span>
                 </div>
-                <div style={{ color: '#6b7280', display: 'flex', gap: '12px' }}>
+                <div style={{ color: 'var(--text-secondary)', display: 'flex', gap: '12px', fontSize: '0.8rem', fontWeight: 500 }}>
                   <span>Użytkownik: {log.user ? log.user.email : 'System'}</span>
                   <span>|</span>
                   <span>{new Date(log.createdAt).toLocaleString('pl-PL')}</span>
@@ -294,17 +307,17 @@ export const AdminPanel: React.FC = () => {
         <div className="stats-grid animate-slide-in">
           {/* Użytkownicy według ról */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit', color: 'var(--text-primary)' }}>
               Użytkownicy w podziale na role
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {stats.usersByRole.map(item => (
                 <div 
                   key={item.role} 
-                  style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-light)', borderRadius: '6px' }}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-light)', borderRadius: '8px', fontSize: '0.9rem' }}
                 >
-                  <span style={{ fontWeight: 600 }}>{polishRoleLabels[item.role]}</span>
-                  <span style={{ color: '#6366f1', fontWeight: 'bold' }}>{item._count._all} kont(a)</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{polishRoleLabels[item.role]}</span>
+                  <span style={{ color: 'var(--color-primary)', fontWeight: 'bold' }}>{item._count._all} kont(a)</span>
                 </div>
               ))}
             </div>
@@ -312,17 +325,17 @@ export const AdminPanel: React.FC = () => {
 
           {/* Artykuły według statusów */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit', color: 'var(--text-primary)' }}>
               Artykuły w podziale na statusy
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {stats.articlesByStatus.map(item => (
                 <div 
                   key={item.status} 
-                  style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-light)', borderRadius: '6px' }}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-light)', borderRadius: '8px', fontSize: '0.9rem' }}
                 >
-                  <span style={{ fontWeight: 600 }}>{item.status}</span>
-                  <span style={{ color: '#10b981', fontWeight: 'bold' }}>{item._count._all} tekst(y)</span>
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{item.status}</span>
+                  <span style={{ color: '#059669', fontWeight: 'bold' }}>{item._count._all} tekst(y)</span>
                 </div>
               ))}
             </div>
@@ -330,18 +343,18 @@ export const AdminPanel: React.FC = () => {
 
           {/* Liderzy treści */}
           <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '16px', fontFamily: 'Outfit', color: 'var(--text-primary)' }}>
               Najbardziej aktywni Autorzy
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {stats.topAuthors.map(author => (
                 <div 
                   key={author.id} 
-                  style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-light)', borderRadius: '6px' }}
+                  style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-light)', borderRadius: '8px', fontSize: '0.9rem' }}
                 >
                   <div>
-                    <span style={{ fontWeight: 600 }}>{author.name}</span>
-                    <div style={{ fontSize: '0.72rem', color: '#6b7280' }}>{author.email}</div>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{author.name}</span>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{author.email}</div>
                   </div>
                   <span style={{ color: '#a855f7', fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
                     {author._count.authoredArticles} tekst(ów)

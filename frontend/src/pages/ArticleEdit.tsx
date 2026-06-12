@@ -22,8 +22,25 @@ import {
   History,
   Calendar,
   UserCheck,
-  File
+  File,
+  Eye
 } from 'lucide-react';
+
+const getMockCategoryAndGradient = (id: number) => {
+  const categories = ['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA'];
+  const gradients = [
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+    'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+    'linear-gradient(135deg, #a6c0fe 0%, #f1a7f1 100%)',
+    'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)'
+  ];
+  return {
+    category: categories[id % categories.length],
+    gradient: gradients[id % gradients.length]
+  };
+};
 
 export const ArticleEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +56,7 @@ export const ArticleEdit: React.FC = () => {
   const [lead, setLead] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('split');
 
   // Stan workflow
   const [selectedReviewer, setSelectedReviewer] = useState<number | null>(null);
@@ -311,12 +329,12 @@ export const ArticleEdit: React.FC = () => {
       {/* ------------------------------------------------------------------------
          GÓRNY RETRO PASEK
          ------------------------------------------------------------------------ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <Link to="/articles" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#9ca3af', fontSize: '0.9rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+        <Link to="/articles" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
           <ArrowLeft size={16} /> Powrót do bazy
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.88rem', color: '#9ca3af' }}>Status:</span>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status tekstu:</span>
           <span className={`badge badge-${article.status.toLowerCase()}`}>
             {polishStatusLabels[article.status]}
           </span>
@@ -326,61 +344,204 @@ export const ArticleEdit: React.FC = () => {
       {/* ------------------------------------------------------------------------
          SIATKA GŁÓWNA (GRID)
          ------------------------------------------------------------------------ */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '7fr 4fr',
-        gap: '24px',
-        alignItems: 'start'
-      }}>
+      <div className="article-edit-container">
         {/* LEWA KOLUMNA: EDYTOR MARKDOWN & PODGLĄD */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '1.4rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit' }}>
-              <FileText size={22} style={{ color: '#6366f1' }} />
-              Treść Artykułu
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h2 style={{ fontSize: '1.4rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'Outfit' }}>
+              <FileText size={22} style={{ color: 'var(--color-primary)' }} />
+              Obszar Roboczy Artykułu
             </h2>
 
             {/* Inputy Tytułu i Leada */}
             <div className="form-group">
-              <label className="form-label">Tytuł</label>
+              <label className="form-label">Tytuł prasowy (Nagłówek główny)</label>
               <input 
                 type="text" 
                 className="form-input" 
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={!canEditContent || saving}
-                style={{ fontSize: '1.1rem', fontWeight: 600 }}
+                style={{ fontSize: '1.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif' }}
+                placeholder="Wpisz chwytliwy tytuł artykułu..."
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Lead (Wstęp)</label>
+            <div className="form-group" style={{ marginBottom: '24px' }}>
+              <label className="form-label">Lead / Wstęp (Wyróżniony akapit początkowy)</label>
               <textarea 
                 className="form-input" 
                 rows={2}
                 value={lead}
                 onChange={(e) => setLead(e.target.value)}
                 disabled={!canEditContent || saving}
-                style={{ resize: 'vertical' }}
+                style={{ resize: 'vertical', fontSize: '0.95rem', lineHeight: '1.5', fontWeight: 500 }}
+                placeholder="Napisz krótki, zachęcający wstęp (będzie pogrubiony na początku artykułu)..."
               />
             </div>
 
-            {/* Split Screen Editor i Live Preview */}
-            <label className="form-label">Treść (Format Markdown)</label>
-            <div className="editor-layout" style={{ marginBottom: '20px' }}>
-              <div>
-                <textarea 
-                  className="editor-textarea"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  disabled={!canEditContent || saving}
-                  placeholder="# Wpisz nagłówek..."
-                />
+            {/* Przełącznik trybu edytora / podglądu (wzorem profesjonalnych CMS) */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '16px', 
+              borderBottom: '1px solid var(--border-light)', 
+              paddingBottom: '12px',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('split')}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: editorMode === 'split' ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                    color: editorMode === 'split' ? '#ffffff' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                >
+                  🖥️ Podział ekranu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('edit')}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: editorMode === 'edit' ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                    color: editorMode === 'edit' ? '#ffffff' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                >
+                  ✏️ Edytor (Markdown)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('preview')}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-light)',
+                    backgroundColor: editorMode === 'preview' ? 'var(--color-primary)' : 'var(--bg-secondary)',
+                    color: editorMode === 'preview' ? '#ffffff' : 'var(--text-primary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'all 0.2s',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                >
+                  <Eye size={16} /> Podgląd (Wmedia Live)
+                </button>
               </div>
-              <div 
-                className="preview-container"
-                dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
-              />
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {editorMode === 'split' && 'Podgląd na żywo obok edytora'}
+                {editorMode === 'edit' && 'Pełna szerokość do wygodnego pisania'}
+                {editorMode === 'preview' && 'Wizualizacja artykułu w portalu prasowym'}
+              </span>
+            </div>
+            
+            <div 
+              className="editor-layout" 
+              style={{ 
+                marginBottom: '24px',
+                gridTemplateColumns: editorMode === 'split' ? '1fr 1fr' : '1fr'
+              }}
+            >
+              {(editorMode === 'split' || editorMode === 'edit') && (
+                <div style={{ height: '100%' }}>
+                  <textarea 
+                    className="editor-textarea"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    disabled={!canEditContent || saving}
+                    placeholder="# Nagłówek sekcji&#10;&#10;Zacznij pisać treść artykułu... Możesz używać tagów Markdown, np. **pogrubienie**, *kursywa*, czy `kod`."
+                    style={{ height: '100%', resize: 'none' }}
+                  />
+                </div>
+              )}
+              
+              {(editorMode === 'split' || editorMode === 'preview') && (
+                /* Portal-Style live preview */
+                <div className="preview-container" style={{ height: '100%' }}>
+                  <div className="portal-article-wrapper">
+                    <span className="portal-article-category">
+                      {getMockCategoryAndGradient(article.id).category}
+                    </span>
+                    <h1 className="portal-article-title">{title || 'Brak Tytułu'}</h1>
+                    
+                    <div className="portal-article-author-row">
+                      <div className="sidebar-avatar" style={{ width: '32px', height: '32px', fontSize: '0.78rem' }}>
+                        {article.author.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="portal-article-author-info">
+                        <span className="portal-article-author-name">{article.author.name}</span>
+                        <span className="portal-article-meta">
+                          {article.publishedAt ? `Opublikowano: ${new Date(article.publishedAt).toLocaleDateString('pl-PL')}` : 'Szkic roboczy'} • ⏱️ {Math.max(1, Math.round(content.split(/\s+/).length / 180))} min czytania
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Dynamic Hero Image */}
+                    {article.uploads && article.uploads.length > 0 && article.uploads.some(up => up.mimetype.startsWith('image/')) ? (
+                      <img 
+                        src={`http://localhost:5000${article.uploads.find(up => up.mimetype.startsWith('image/'))?.filepath}`} 
+                        alt="Ilustracja artykułu" 
+                        className="portal-article-image" 
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%',
+                        height: '180px',
+                        borderRadius: '6px',
+                        background: getMockCategoryAndGradient(article.id).gradient,
+                        marginBottom: '24px',
+                        opacity: 0.15,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '3rem',
+                        border: '1px solid var(--border-light)'
+                      }}>
+                        📰
+                      </div>
+                    )}
+
+                    {lead && (
+                      <div className="portal-article-lead">
+                        {lead}
+                      </div>
+                    )}
+
+                    <div 
+                      className="portal-article-content"
+                      dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Przycisk Zapisz */}
@@ -391,69 +552,72 @@ export const ArticleEdit: React.FC = () => {
                   className="btn btn-primary"
                   disabled={saving}
                 >
-                  <Save size={18} /> {saving ? 'Zapisywanie...' : 'Zapisz zmiany'}
+                  <Save size={18} /> {saving ? 'Zapisywanie...' : 'Zapisz i synchronizuj'}
                 </button>
               </div>
             )}
           </div>
 
           {/* DYSKUSJA I UWAGI (KOMENTARZE REALTIME) */}
-          <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '450px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit' }}>
+          <div className="glass-panel" style={{ padding: '28px', display: 'flex', flexDirection: 'column', height: '480px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit' }}>
               <MessageSquare size={20} style={{ color: '#a855f7' }} />
-              Uwagi i Komentarze Redakcyjne
+              Uwagi i Komentarze Zespołu
             </h3>
 
             {/* Lista komentarzy */}
             <div style={{ 
               flex: 1, 
               overflowY: 'auto', 
-              marginBottom: '16px', 
+              marginBottom: '20px', 
               display: 'flex', 
               flexDirection: 'column', 
               gap: '12px',
               paddingRight: '6px'
             }}>
               {article.comments?.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '60px 0', color: '#6b7280', fontSize: '0.88rem' }}>
-                  Brak komentarzy. Rozpocznij dyskusję wpisując pierwszą uwagę.
+                <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Brak uwag. Rozpocznij dyskusję wpisując pierwszy komentarz redakcyjny.
                 </div>
               ) : (
-                article.comments?.map((comment) => (
-                  <div 
-                    key={comment.id}
-                    style={{
-                      alignSelf: comment.userId === user?.id ? 'flex-end' : 'flex-start',
-                      backgroundColor: comment.userId === user?.id ? 'rgba(99, 102, 241, 0.08)' : 'rgba(255, 255, 255, 0.02)',
-                      border: comment.userId === user?.id ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid var(--border-light)',
-                      borderRadius: '12px',
-                      padding: '12px 16px',
-                      maxWidth: '80%',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginBottom: '4px', fontSize: '0.78rem', fontWeight: 600 }}>
-                      <span style={{ color: comment.userId === user?.id ? '#a5b4fc' : '#fff' }}>
-                        {comment.user.name} ({comment.user.role})
-                      </span>
-                      <span style={{ color: '#6b7280' }}>
-                        {new Date(comment.createdAt).toLocaleTimeString('pl-PL')}
-                      </span>
+                article.comments?.map((comment) => {
+                  const isMe = comment.userId === user?.id;
+                  return (
+                    <div 
+                      key={comment.id}
+                      style={{
+                        alignSelf: isMe ? 'flex-end' : 'flex-start',
+                        backgroundColor: isMe ? 'rgba(226, 0, 26, 0.04)' : 'var(--bg-tertiary)',
+                        border: isMe ? '1px solid rgba(226, 0, 26, 0.15)' : '1px solid var(--border-light)',
+                        borderRadius: '12px',
+                        padding: '12px 18px',
+                        maxWidth: '80%',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '24px', marginBottom: '4px', fontSize: '0.78rem', fontWeight: 700 }}>
+                        <span style={{ color: isMe ? 'var(--color-primary)' : 'var(--text-primary)' }}>
+                          {comment.user.name} ({comment.user.role === Role.ADMIN ? 'Admin' : comment.user.role === Role.EDITOR ? 'Redaktor' : comment.user.role === Role.REVIEWER ? 'Recenzent' : 'Autor'})
+                        </span>
+                        <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
+                          {new Date(comment.createdAt).toLocaleTimeString('pl-PL')}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: '1.45', whiteSpace: 'pre-wrap' }}>
+                        {comment.content}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.88rem', color: '#d1d5db', lineHeight: '1.4', whiteSpace: 'pre-wrap' }}>
-                      {comment.content}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               <div ref={commentsEndRef} />
             </div>
 
             {/* Formularz komentarza */}
-            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '10px' }}>
+            <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '12px' }}>
               <input 
                 type="text" 
-                placeholder="Wpisz uwagę do tekstu..." 
+                placeholder="Wpisz uwagę lub zalecenie poprawki dla autora..." 
                 className="form-input"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
@@ -462,7 +626,7 @@ export const ArticleEdit: React.FC = () => {
               <button 
                 type="submit" 
                 className="btn btn-primary" 
-                style={{ padding: '10px 16px' }}
+                style={{ padding: '10px 18px', flexShrink: 0 }}
                 disabled={commentLoading}
               >
                 <Send size={16} />
@@ -472,27 +636,28 @@ export const ArticleEdit: React.FC = () => {
         </div>
 
         {/* PRAWA KOLUMNA: WORKFLOW, PLIKI, HISTORIA */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* PANEL WORKFLOW REDAKCYJNEGO */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UserCheck size={20} style={{ color: '#10b981' }} />
-              Workflow Redakcyjny
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserCheck size={20} style={{ color: '#059669' }} />
+              Karta Metadanych i Stanu
             </h3>
 
             {/* Informacje o zespole */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#9ca3af' }}>Autor:</span>
-                <span style={{ fontWeight: 600 }}>{article.author.name}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Autor tekstu:</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{article.author.name}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#9ca3af' }}>Recenzent:</span>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Recenzent:</span>
                 {isEditorOrAdmin ? (
                   /* Edytor może przypisywać recenzenta */
                   <select 
-                    className="form-input" 
-                    style={{ width: '180px', padding: '6px 12px', fontSize: '0.8rem' }}
+                    className="form-input form-select" 
+                    style={{ width: '180px', padding: '6px 12px', fontSize: '0.8rem', fontWeight: 600 }}
                     value={selectedReviewer || ''}
                     onChange={(e) => setSelectedReviewer(e.target.value ? parseInt(e.target.value) : null)}
                   >
@@ -502,15 +667,16 @@ export const ArticleEdit: React.FC = () => {
                     ))}
                   </select>
                 ) : (
-                  <span style={{ fontWeight: 600 }}>
-                    {article.reviewer ? article.reviewer.name : 'Brak przypisanego'}
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {article.reviewer ? article.reviewer.name : 'Nieprzypisany'}
                   </span>
                 )}
               </div>
+
               {article.publishedAt && (
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#9ca3af' }}>Opublikowano:</span>
-                  <span style={{ fontWeight: 600, color: '#06b6d4' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Opublikowano:</span>
+                  <span style={{ fontWeight: 700, color: '#0891b2' }}>
                     {new Date(article.publishedAt).toLocaleString('pl-PL')}
                   </span>
                 </div>
@@ -518,27 +684,27 @@ export const ArticleEdit: React.FC = () => {
             </div>
 
             {/* INTERFEJS ZMIANY STATUSÓW (Zależny od uprawnień) */}
-            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-              <h4 className="form-label" style={{ marginBottom: '12px' }}>Dozwolone Akcje Workflow</h4>
+            <div style={{ borderTop: '2px solid var(--border-light)', paddingTop: '20px' }}>
+              <h4 className="form-label" style={{ marginBottom: '14px', fontSize: '0.75rem' }}>Dozwolone Akcje Workflow</h4>
               
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Komentarz do statusu</label>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontSize: '0.7rem' }}>Uzasadnienie / Komentarz do statusu</label>
                 <input 
                   type="text" 
                   className="form-input" 
-                  placeholder="np. Przekazuję do korekty, poprawiłem lead..."
+                  placeholder="Krótkie wyjaśnienie akcji workflow..."
                   value={statusComment}
                   onChange={(e) => setStatusComment(e.target.value)}
                   disabled={statusLoading}
-                  style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                  style={{ padding: '10px 14px', fontSize: '0.85rem' }}
                 />
               </div>
 
               {/* Warunkowe wyświetlanie planowania dla statusu SCHEDULED */}
               {((isEditorOrAdmin) && (article.status === ArticleStatus.APPROVED || article.status === ArticleStatus.SCHEDULED)) && (
-                <div className="form-group" style={{ backgroundColor: 'rgba(255,255,255,0.01)', padding: '12px', borderRadius: '8px', border: '1px dashed var(--border-light)' }}>
-                  <label className="form-label" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calendar size={14} style={{ color: '#84cc16' }} /> Zaplanuj datę publikacji
+                <div className="form-group" style={{ backgroundColor: 'var(--bg-tertiary)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-light)', marginBottom: '16px' }}>
+                  <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '6px', color: '#65a30d' }}>
+                    <Calendar size={14} /> Zaplanuj datę publikacji
                   </label>
                   <input 
                     type="datetime-local" 
@@ -546,13 +712,13 @@ export const ArticleEdit: React.FC = () => {
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
                     disabled={statusLoading}
-                    style={{ fontSize: '0.85rem' }}
+                    style={{ fontSize: '0.85rem', fontWeight: 600 }}
                   />
                 </div>
               )}
 
               {/* Przyciski Akcji */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 
                 {/* 1. Akcje Autora */}
                 {isAuthor && article.status === ArticleStatus.IDEA && (
@@ -569,10 +735,10 @@ export const ArticleEdit: React.FC = () => {
                   <button 
                     onClick={() => handleStatusChange(ArticleStatus.REVIEW)} 
                     className="btn btn-primary" 
-                    style={{ width: '100%', backgroundColor: '#f59e0b' }}
+                    style={{ width: '100%', backgroundColor: 'var(--status-review)' }}
                     disabled={statusLoading}
                   >
-                    Prześlij do weryfikacji redakcji
+                    Prześlij do weryfikacji redaktora
                   </button>
                 )}
                 {isAuthor && article.status === ArticleStatus.REJECTED && (
@@ -592,15 +758,15 @@ export const ArticleEdit: React.FC = () => {
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.DRAFT)} 
                       className="btn btn-secondary" 
-                      style={{ flex: 1, color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                      style={{ flex: 1, color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.2)', fontWeight: 700 }}
                       disabled={statusLoading}
                     >
-                      Zwróć do poprawki
+                      Odeślij do poprawki
                     </button>
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.APPROVED)} 
                       className="btn btn-primary" 
-                      style={{ flex: 1, backgroundColor: '#10b981' }}
+                      style={{ flex: 1, backgroundColor: 'var(--status-approved)' }}
                       disabled={statusLoading}
                     >
                       Zatwierdź
@@ -611,7 +777,7 @@ export const ArticleEdit: React.FC = () => {
                   <button 
                     onClick={() => handleStatusChange(ArticleStatus.REJECTED)} 
                     className="btn btn-secondary" 
-                    style={{ width: '100%', marginTop: '4px', color: '#6b7280' }}
+                    style={{ width: '100%', marginTop: '4px', color: 'var(--text-secondary)' }}
                     disabled={statusLoading}
                   >
                     Odrzuć całkowicie pomysł
@@ -620,32 +786,32 @@ export const ArticleEdit: React.FC = () => {
 
                 {/* 3. Akcje Edytora (Editora) */}
                 {isEditorOrAdmin && article.status === ArticleStatus.APPROVED && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.SCHEDULED)} 
                       className="btn btn-primary" 
-                      style={{ width: '100%', backgroundColor: '#84cc16' }}
+                      style={{ width: '100%', backgroundColor: 'var(--status-scheduled)' }}
                       disabled={statusLoading}
                     >
-                      Zaplanuj publikację
+                      Zaplanuj datę publikacji
                     </button>
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.PUBLISHED)} 
                       className="btn btn-primary" 
-                      style={{ width: '100%', backgroundColor: '#06b6d4' }}
+                      style={{ width: '100%', backgroundColor: 'var(--status-published)' }}
                       disabled={statusLoading}
                     >
-                      Opublikuj teraz na portalu
+                      Opublikuj na portalu teraz
                     </button>
                   </div>
                 )}
 
                 {isEditorOrAdmin && article.status === ArticleStatus.SCHEDULED && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.PUBLISHED)} 
                       className="btn btn-primary" 
-                      style={{ width: '100%', backgroundColor: '#06b6d4' }}
+                      style={{ width: '100%', backgroundColor: 'var(--status-published)' }}
                       disabled={statusLoading}
                     >
                       Publikuj ręcznie teraz
@@ -653,7 +819,7 @@ export const ArticleEdit: React.FC = () => {
                     <button 
                       onClick={() => handleStatusChange(ArticleStatus.DRAFT)} 
                       className="btn btn-secondary" 
-                      style={{ width: '100%', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                      style={{ width: '100%', color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.2)', fontWeight: 700 }}
                       disabled={statusLoading}
                     >
                       Wycofaj z publikacji (do Szkicu)
@@ -664,18 +830,18 @@ export const ArticleEdit: React.FC = () => {
             </div>
           </div>
 
-          {/* WGrywanie I LISTA ZAŁĄCZNIKÓW */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UploadIcon size={20} style={{ color: '#06b6d4' }} />
-              Pliki i Ilustracje
+          {/* WGRYWANIE I LISTA ZAŁĄCZNIKÓW */}
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UploadIcon size={20} style={{ color: '#0891b2' }} />
+              Pliki i Ilustracje prasowe
             </h3>
 
             {/* Lista wgranych plików */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
               {article.uploads?.length === 0 ? (
-                <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '0.8rem', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
-                  Brak załączników.
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
+                  Brak wgranych załączników. Każda wgrana grafika zostanie automatycznie powiązana jako cover photo artykułu.
                 </div>
               ) : (
                 article.uploads?.map((up) => (
@@ -685,25 +851,25 @@ export const ArticleEdit: React.FC = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                      padding: '12px 14px',
+                      backgroundColor: 'var(--bg-tertiary)',
                       border: '1px solid var(--border-light)',
                       borderRadius: '8px',
-                      fontSize: '0.8rem'
+                      fontSize: '0.85rem'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-                      <File size={16} style={{ color: '#06b6d4', flexShrink: 0 }} />
+                      <File size={16} style={{ color: '#0891b2', flexShrink: 0 }} />
                       <a 
                         href={`http://localhost:5000${up.filepath}`} 
                         target="_blank" 
                         rel="noreferrer"
-                        style={{ color: '#d1d5db', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', fontWeight: 500 }}
+                        style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', fontWeight: 700 }}
                       >
                         {up.filename}
                       </a>
                     </div>
-                    <span style={{ color: '#6b7280', fontSize: '0.75rem', flexShrink: 0 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', flexShrink: 0, fontWeight: 600 }}>
                       {(up.size / 1024).toFixed(0)} KB
                     </span>
                   </div>
@@ -721,19 +887,19 @@ export const ArticleEdit: React.FC = () => {
             />
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="btn btn-secondary animate-slide-in"
-              style={{ width: '100%', fontSize: '0.85rem' }}
+              className="btn btn-secondary"
+              style={{ width: '100%', fontSize: '0.85rem', fontWeight: 700 }}
               disabled={uploadLoading}
             >
-              <UploadIcon size={16} /> {uploadLoading ? 'Wgrywanie pliku...' : 'Wgraj ilustrację lub PDF'}
+              <UploadIcon size={16} /> {uploadLoading ? 'Przesyłanie...' : 'Wgraj ilustrację prasową'}
             </button>
           </div>
 
           {/* HISTORIA ZMIAN STATUSÓW (Timeline) */}
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <History size={20} style={{ color: '#a855f7' }} />
-              Historia Zmian Tekstu
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '24px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <History size={20} style={{ color: 'var(--color-primary)' }} />
+              Dziennik Workflow Tekstu
             </h3>
 
             <div className="timeline">
@@ -742,14 +908,11 @@ export const ArticleEdit: React.FC = () => {
                   <div className="timeline-item-header">
                     <span className="timeline-user">{entry.user.name}</span>
                     <span className="timeline-time">
-                      {new Date(entry.changedAt).toLocaleDateString('pl-PL')}
+                      {new Date(entry.changedAt).toLocaleDateString('pl-PL')} o {new Date(entry.changedAt).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                    Status:{' '}
-                    <span style={{ color: '#fff', fontWeight: 600 }}>
-                      {polishStatusLabels[entry.newStatus]}
-                    </span>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                    Status: <span className={`badge badge-${entry.newStatus.toLowerCase()}`} style={{ padding: '2px 6px', fontSize: '0.65rem' }}>{polishStatusLabels[entry.newStatus]}</span>
                   </div>
                   {entry.comment && (
                     <div className="timeline-comment">{entry.comment}</div>

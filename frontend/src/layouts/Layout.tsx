@@ -19,7 +19,6 @@ import {
   Bell, 
   Check, 
   X, 
-  User as UserIcon,
   BookOpen
 } from 'lucide-react';
 
@@ -87,27 +86,18 @@ export const Layout: React.FC = () => {
         </nav>
 
         {/* Stopka sidebaru z profilem i logoutem */}
+        {/* Stopka sidebaru z profilem i logoutem */}
         <div className="sidebar-footer">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(99, 102, 241, 0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#6366f1',
-              flexShrink: 0
-            }}>
-              <UserIcon size={18} />
+          <div className="sidebar-footer-info">
+            <div className="sidebar-avatar">
+              {user?.name ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'U'}
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', color: '#f1f5f9' }}>
                 {user?.name}
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#9ca3af', textTransform: 'uppercase', fontWeight: 500 }}>
-                {user?.role}
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+                {user ? (user.role === Role.ADMIN ? 'Admin' : user.role === Role.EDITOR ? 'Redaktor' : user.role === Role.REVIEWER ? 'Recenzent' : 'Autor') : ''}
               </div>
             </div>
           </div>
@@ -140,16 +130,36 @@ export const Layout: React.FC = () => {
           height: '70px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
-          padding: '0 32px',
-          boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+          justifyContent: 'space-between',
+          padding: '0 40px',
+          boxShadow: 'var(--shadow-sm)'
         }}>
+          {/* Metryki i status połączenia */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <span style={{
+              backgroundColor: 'rgba(226, 0, 26, 0.08)',
+              color: 'var(--color-primary)',
+              padding: '6px 14px',
+              borderRadius: '20px',
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em'
+            }}>
+              Wmedia Sport • Wydawca
+            </span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
+              Live Sync
+            </span>
+          </div>
+
           {/* Przycisk powiadomień */}
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
+                background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border-light)',
                 borderRadius: '50%',
                 width: '42px',
@@ -157,13 +167,13 @@ export const Layout: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: showNotifications ? '#6366f1' : '#f3f4f6',
+                color: showNotifications ? 'var(--color-primary)' : 'var(--text-primary)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 position: 'relative'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
             >
               <Bell size={20} />
               
@@ -184,7 +194,7 @@ export const Layout: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: '2px',
-                  border: '2px solid #0a0a0f'
+                  border: '2px solid var(--bg-secondary)'
                 }}>
                   {unreadCount}
                 </span>
@@ -202,7 +212,7 @@ export const Layout: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 zIndex: 200,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                boxShadow: 'var(--shadow-lg)',
                 overflow: 'hidden'
               }}>
                 <div style={{
@@ -212,16 +222,16 @@ export const Layout: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'space-between'
                 }}>
-                  <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Powiadomienia</h4>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700 }}>Powiadomienia</h4>
                   {unreadCount > 0 && (
                     <button 
                       onClick={() => markAllAsRead()}
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#6366f1',
+                        color: 'var(--color-primary)',
                         fontSize: '0.78rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -244,7 +254,7 @@ export const Layout: React.FC = () => {
                     <div style={{
                       padding: '40px 20px',
                       textAlign: 'center',
-                      color: '#6b7280',
+                      color: 'var(--text-secondary)',
                       fontSize: '0.85rem'
                     }}>
                       Brak powiadomień do wyświetlenia.
@@ -255,8 +265,8 @@ export const Layout: React.FC = () => {
                         key={notif.id} 
                         style={{
                           padding: '16px',
-                          borderBottom: '1px solid rgba(255,255,255,0.03)',
-                          backgroundColor: notif.isRead ? 'transparent' : 'rgba(99, 102, 241, 0.03)',
+                          borderBottom: '1px solid var(--border-light)',
+                          backgroundColor: notif.isRead ? 'transparent' : 'rgba(226, 0, 26, 0.02)',
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '4px',
@@ -272,8 +282,8 @@ export const Layout: React.FC = () => {
                         }}>
                           <span style={{ 
                             fontSize: '0.88rem', 
-                            fontWeight: notif.isRead ? 500 : 700, 
-                            color: notif.isRead ? '#d1d5db' : '#fff' 
+                            fontWeight: notif.isRead ? 600 : 800, 
+                            color: notif.isRead ? 'var(--text-secondary)' : 'var(--text-primary)' 
                           }}>
                             {notif.title}
                           </span>
@@ -283,23 +293,23 @@ export const Layout: React.FC = () => {
                               style={{
                                 background: 'none',
                                 border: 'none',
-                                color: '#6b7280',
+                                color: 'var(--text-secondary)',
                                 cursor: 'pointer',
                                 padding: '2px',
                                 borderRadius: '4px'
                               }}
                               onMouseEnter={(e) => e.currentTarget.style.color = '#10b981'}
-                              onMouseLeave={(e) => e.currentTarget.style.color = '#6b7280'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
                               title="Oznacz jako przeczytane"
                             >
                               <Check size={14} />
                             </button>
                           )}
                         </div>
-                        <span style={{ fontSize: '0.8rem', color: '#9ca3af', lineHeight: '1.4' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                           {notif.message}
                         </span>
-                        <span style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: '4px' }}>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '4px', fontWeight: 500 }}>
                           {new Date(notif.createdAt).toLocaleString('pl-PL')}
                         </span>
                       </div>

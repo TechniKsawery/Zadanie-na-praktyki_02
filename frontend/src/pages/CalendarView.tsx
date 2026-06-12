@@ -171,10 +171,10 @@ export const CalendarView: React.FC = () => {
         gap: '20px'
       }}>
         <div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Outfit, sans-serif', marginBottom: '8px', color: 'var(--text-primary)' }}>
             Kalendarz Publikacji
           </h1>
-          <p style={{ color: '#9ca3af', fontSize: '0.95rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', fontWeight: 500 }}>
             Harmonogram zaplanowanych oraz opublikowanych artykułów w portalu
           </p>
         </div>
@@ -187,30 +187,32 @@ export const CalendarView: React.FC = () => {
           backgroundColor: 'var(--bg-secondary)',
           padding: '8px 16px',
           borderRadius: '8px',
-          border: '1px solid var(--border-light)'
+          border: '1px solid var(--border-light)',
+          boxShadow: 'var(--shadow-sm)'
         }}>
           <button 
             onClick={handlePrevMonth}
-            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             <ChevronLeft size={20} />
           </button>
           <span style={{ 
             fontFamily: 'Outfit, sans-serif', 
-            fontWeight: 600, 
+            fontWeight: 700, 
             fontSize: '1.05rem', 
             minWidth: '130px', 
-            textAlign: 'center' 
+            textAlign: 'center',
+            color: 'var(--text-primary)'
           }}>
             {monthNames[month]} {year}
           </span>
           <button 
             onClick={handleNextMonth}
-            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
           >
             <ChevronRight size={20} />
           </button>
@@ -221,11 +223,11 @@ export const CalendarView: React.FC = () => {
          SIATKA KALENDARZA
          ------------------------------------------------------------------------ */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px 0', color: '#9ca3af' }}>
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-secondary)' }}>
           Pobieranie harmonogramu...
         </div>
       ) : (
-        <div className="glass-panel" style={{ padding: '20px' }}>
+        <div className="glass-panel" style={{ padding: '24px' }}>
           
           {/* Nazwy Dni Tygodnia */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', marginBottom: '8px' }}>
@@ -248,7 +250,7 @@ export const CalendarView: React.FC = () => {
                   style={{
                     opacity: cell.isCurrentMonth ? 1 : 0.35,
                     borderColor: isToday(cell.date) ? 'var(--color-primary)' : 'var(--border-light)',
-                    backgroundColor: isToday(cell.date) ? 'rgba(99,102,241,0.02)' : 'var(--bg-secondary)'
+                    backgroundColor: isToday(cell.date) ? 'rgba(226, 0, 26, 0.02)' : 'var(--bg-secondary)'
                   }}
                 >
                   <div className="calendar-day-number">
@@ -265,11 +267,11 @@ export const CalendarView: React.FC = () => {
                         style={{
                           backgroundColor: art.status === ArticleStatus.PUBLISHED ? 'rgba(6, 182, 212, 0.12)' : 'rgba(132, 204, 22, 0.12)',
                           borderLeft: art.status === ArticleStatus.PUBLISHED ? '3px solid #06b6d4' : '3px solid #84cc16',
-                          color: art.status === ArticleStatus.PUBLISHED ? '#67e8f9' : '#bef264'
+                          color: art.status === ArticleStatus.PUBLISHED ? '#0e7490' : '#4d7c0f'
                         }}
                         title={`${art.title} - ${art.author.name} (${polishStatusLabels[art.status]})`}
                       >
-                        <span style={{ fontWeight: 600 }}>
+                        <span style={{ fontWeight: 800 }}>
                           {art.status === ArticleStatus.PUBLISHED ? (
                             <Globe size={10} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                           ) : (
@@ -293,7 +295,8 @@ export const CalendarView: React.FC = () => {
         display: 'flex',
         gap: '24px',
         fontSize: '0.85rem',
-        color: '#9ca3af',
+        color: 'var(--text-secondary)',
+        fontWeight: 600,
         justifyContent: 'flex-start'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

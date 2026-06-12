@@ -18,10 +18,9 @@ import {
   ArrowRight, 
   Check, 
   X, 
-  User as UserIcon,
-  MessageSquare,
-  FileEdit,
-  Clock,
+  MessageSquare, 
+  FileEdit, 
+  Clock, 
   Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -34,6 +33,22 @@ const polishStatusLabels: Record<ArticleStatus, string> = {
   [ArticleStatus.SCHEDULED]: 'Zaplanowane',
   [ArticleStatus.PUBLISHED]: 'Opublikowane',
   [ArticleStatus.REJECTED]: 'Odrzucone'
+};
+
+const getMockCategoryAndGradient = (id: number) => {
+  const categories = ['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA'];
+  const gradients = [
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+    'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+    'linear-gradient(135deg, #a6c0fe 0%, #f1a7f1 100%)',
+    'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)'
+  ];
+  return {
+    category: categories[id % categories.length],
+    gradient: gradients[id % gradients.length]
+  };
 };
 
 export const Articles: React.FC = () => {
@@ -362,94 +377,134 @@ export const Articles: React.FC = () => {
                       Brak artykułów
                     </div>
                   ) : (
-                    colArticles.map(art => (
-                      <div 
-                        key={art.id} 
-                        className="kanban-card"
-                        onClick={() => navigate(`/articles/${art.id}`)}
-                      >
-                        <h4 className="kanban-card-title">{art.title}</h4>
-                        <p className="kanban-card-lead">{art.lead}</p>
-                        
-                        <div className="kanban-card-meta">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <UserIcon size={12} />
-                            <span>{art.author.name}</span>
+                    colArticles.map(art => {
+                      const { category, gradient } = getMockCategoryAndGradient(art.id);
+                      const hasImage = art.uploads && art.uploads.length > 0 && art.uploads.some(up => up.mimetype.startsWith('image/'));
+                      const imagePath = hasImage ? art.uploads?.find(up => up.mimetype.startsWith('image/'))?.filepath : null;
+                      const wordCount = art.content ? art.content.split(/\s+/).length : 0;
+                      const readTime = Math.max(1, Math.round(wordCount / 180));
+
+                      return (
+                        <div 
+                          key={art.id} 
+                          className="kanban-card"
+                          onClick={() => navigate(`/articles/${art.id}`)}
+                        >
+                          {imagePath ? (
+                            <img 
+                              src={`http://localhost:5000${imagePath}`} 
+                              alt={art.title} 
+                              style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '4px', marginBottom: '4px', border: '1px solid var(--border-light)' }} 
+                            />
+                          ) : (
+                            <div style={{ width: '100%', height: '100px', borderRadius: '4px', background: gradient, marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', opacity: 0.85, border: '1px solid var(--border-light)' }}>
+                              📰
+                            </div>
+                          )}
+                          <div>
+                            <span className="news-card-category">{category}</span>
+                            <h4 className="kanban-card-title">{art.title}</h4>
                           </div>
-                          {art._count && art._count.comments > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#a855f7' }}>
-                              <MessageSquare size={12} />
-                              <span>{art._count.comments}</span>
+                          <p className="kanban-card-lead">{art.lead}</p>
+                          
+                          <div className="kanban-card-meta">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '50%',
+                                background: 'var(--bg-dark-sidebar)',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.65rem',
+                                fontWeight: 800,
+                                fontFamily: 'Outfit'
+                              }}>
+                                {art.author.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                              </div>
+                              <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{art.author.name}</span>
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.7rem' }}>
+                              <span>⏱️ {readTime} min</span>
+                              {art._count && art._count.comments > 0 && (
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#a855f7' }}>
+                                  <MessageSquare size={12} />
+                                  {art._count.comments}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Szybka promocja statusu na karcie */}
+                          {canQuickPromote(art) && (
+                            <div 
+                              style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end' }}
+                              onClick={(e) => e.stopPropagation()} // Zapobiegamy nawigacji przy kliknięciu w guzik akcji
+                            >
+                              {art.status === ArticleStatus.IDEA && (
+                                <button 
+                                  onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Rozpoczęto pisanie szkicu.')}
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                                >
+                                  Pisz szkic <ArrowRight size={12} />
+                                </button>
+                              )}
+                              {art.status === ArticleStatus.DRAFT && (
+                                <button 
+                                  onClick={() => handleQuickStatusChange(art.id, ArticleStatus.REVIEW, 'Przesłano do recenzji redaktora.')}
+                                  className="btn btn-primary" 
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                                >
+                                  Do recenzji <Clock size={12} />
+                                </button>
+                              )}
+                              {art.status === ArticleStatus.REJECTED && (
+                                <button 
+                                  onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Poprawianie odrzuconego tekstu.')}
+                                  className="btn btn-secondary" 
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                                >
+                                  Popraw tekst <FileEdit size={12} />
+                                </button>
+                              )}
+                              {art.status === ArticleStatus.REVIEW && (
+                                <div style={{ display: 'flex', gap: '6px' }}>
+                                  <button 
+                                    onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Odesłano do poprawy - recenzent.')}
+                                    className="btn btn-secondary" 
+                                    style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                                    title="Odeślij do poprawy"
+                                  >
+                                    <X size={12} /> Popraw
+                                  </button>
+                                  <button 
+                                    onClick={() => handleQuickStatusChange(art.id, ArticleStatus.APPROVED, 'Zaakceptowano treść - recenzent.')}
+                                    className="btn btn-primary" 
+                                    style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981' }}
+                                    title="Zatwierdź do publikacji"
+                                  >
+                                    <Check size={12} /> Akceptuj
+                                  </button>
+                                </div>
+                              )}
+                              {art.status === ArticleStatus.APPROVED && (
+                                <button 
+                                  onClick={() => navigate(`/articles/${art.id}`)}
+                                  className="btn btn-primary" 
+                                  style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#84cc16' }}
+                                >
+                                  Zaplanuj publikację
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
-
-                        {/* Szybka promocja statusu na karcie */}
-                        {canQuickPromote(art) && (
-                          <div 
-                            style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'flex-end' }}
-                            onClick={(e) => e.stopPropagation()} // Zapobiegamy nawigacji przy kliknięciu w guzik akcji
-                          >
-                            {art.status === ArticleStatus.IDEA && (
-                              <button 
-                                onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Rozpoczęto pisanie szkicu.')}
-                                className="btn btn-secondary" 
-                                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                              >
-                                Pisz szkic <ArrowRight size={12} />
-                              </button>
-                            )}
-                            {art.status === ArticleStatus.DRAFT && (
-                              <button 
-                                onClick={() => handleQuickStatusChange(art.id, ArticleStatus.REVIEW, 'Przesłano do recenzji redaktora.')}
-                                className="btn btn-primary" 
-                                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                              >
-                                Do recenzji <Clock size={12} />
-                              </button>
-                            )}
-                            {art.status === ArticleStatus.REJECTED && (
-                              <button 
-                                onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Poprawianie odrzuconego tekstu.')}
-                                className="btn btn-secondary" 
-                                style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                              >
-                                Popraw tekst <FileEdit size={12} />
-                              </button>
-                            )}
-                            {art.status === ArticleStatus.REVIEW && (
-                              <div style={{ display: 'flex', gap: '6px' }}>
-                                <button 
-                                  onClick={() => handleQuickStatusChange(art.id, ArticleStatus.DRAFT, 'Odesłano do poprawy - recenzent.')}
-                                  className="btn btn-secondary" 
-                                  style={{ padding: '4px 8px', fontSize: '0.75rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-                                  title="Odeślij do poprawy"
-                                >
-                                  <X size={12} /> Popraw
-                                </button>
-                                <button 
-                                  onClick={() => handleQuickStatusChange(art.id, ArticleStatus.APPROVED, 'Zaakceptowano treść - recenzent.')}
-                                  className="btn btn-primary" 
-                                  style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#10b981' }}
-                                  title="Zatwierdź do publikacji"
-                                >
-                                  <Check size={12} /> Akceptuj
-                                </button>
-                              </div>
-                            )}
-                            {art.status === ArticleStatus.APPROVED && (
-                              <button 
-                                onClick={() => navigate(`/articles/${art.id}`)}
-                                className="btn btn-primary" 
-                                style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: '#84cc16' }}
-                              >
-                                Zaplanuj publikację
-                              </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -480,43 +535,69 @@ export const Articles: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredArticles.map(art => (
+               filteredArticles.map(art => {
+                const { category, gradient } = getMockCategoryAndGradient(art.id);
+                const hasImage = art.uploads && art.uploads.length > 0 && art.uploads.some(up => up.mimetype.startsWith('image/'));
+                const imagePath = hasImage ? art.uploads?.find(up => up.mimetype.startsWith('image/'))?.filepath : null;
+
+                return (
                   <tr 
                     key={art.id} 
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', transition: 'background-color 0.2s', cursor: 'pointer' }}
+                    style={{ borderBottom: '1px solid var(--border-light)', transition: 'background-color 0.2s', cursor: 'pointer' }}
                     onClick={() => navigate(`/articles/${art.id}`)}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.01)'}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <td style={{ padding: '16px 24px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>{art.title}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#9ca3af', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {art.lead}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                        {imagePath ? (
+                          <img 
+                            src={`http://localhost:5000${imagePath}`} 
+                            alt={art.title} 
+                            style={{ width: '50px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-light)', flexShrink: 0 }} 
+                          />
+                        ) : (
+                          <div style={{ width: '50px', height: '38px', borderRadius: '4px', background: gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', opacity: 0.85, border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                            📰
+                          </div>
+                        )}
+                        <div style={{ overflow: 'hidden' }}>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--color-primary)', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                            {category}
+                          </span>
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '2px', color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', maxWidth: '400px' }}>
+                            {art.title}
+                          </div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {art.lead}
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.9rem' }}>{art.author.name}</td>
+                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 600 }}>{art.author.name}</td>
                     <td style={{ padding: '16px 24px' }}>
                       <span className={`badge badge-${art.status.toLowerCase()}`}>
                         {polishStatusLabels[art.status]}
                       </span>
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: art.reviewer ? '#fff' : '#6b7280' }}>
+                    <td style={{ padding: '16px 24px', fontSize: '0.9rem', color: art.reviewer ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600 }}>
                       {art.reviewer ? art.reviewer.name : 'Brak'}
                     </td>
-                    <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: '#9ca3af' }}>
+                    <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                       {new Date(art.updatedAt).toLocaleDateString('pl-PL')}
                     </td>
                     <td style={{ padding: '16px 24px' }} onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => navigate(`/articles/${art.id}`)}
                         className="btn btn-secondary" 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        style={{ padding: '6px 12px', fontSize: '0.8rem', fontWeight: 700 }}
                       >
                         Otwórz
                       </button>
                     </td>
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
