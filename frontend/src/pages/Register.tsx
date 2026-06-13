@@ -78,7 +78,7 @@ export const Register: React.FC = () => {
         width: '100%',
         padding: '40px',
         zIndex: 5,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--bg-secondary)',
         boxShadow: 'var(--shadow-lg)'
       }}>
         {/* Nagłówek */}

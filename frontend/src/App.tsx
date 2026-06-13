@@ -9,6 +9,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // Importy Widoków i Layoutów
 import Layout from './layouts/Layout';
@@ -28,58 +29,60 @@ import { Role } from './types';
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      {/* Dostawca uwierzytelniania JWT */}
-      <AuthProvider>
-        {/* Dostawca powiadomień realtime w oparciu o Socket.IO (wymaga zalogowania, stąd zagnieżdżenie) */}
-        <NotificationProvider>
-          <Routes>
-            
-            {/* ------------------------------------------------------------------
-               TRASY PUBLICZNE (Dla niezalogowanych)
-               ------------------------------------------------------------------ */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+      <ThemeProvider>
+        {/* Dostawca uwierzytelniania JWT */}
+        <AuthProvider>
+          {/* Dostawca powiadomień realtime w oparciu o Socket.IO (wymaga zalogowania, stąd zagnieżdżenie) */}
+          <NotificationProvider>
+            <Routes>
+              
+              {/* ------------------------------------------------------------------
+                 TRASY PUBLICZNE (Dla niezalogowanych)
+                 ------------------------------------------------------------------ */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* ------------------------------------------------------------------
-               TRASY CHRONIONE (Wymagają tokena JWT oraz Layoutu nawigacyjnego)
-               ------------------------------------------------------------------ */}
-            <Route 
-              path="/" 
-              element={
-                <AuthGuard>
-                  <Layout />
-                </AuthGuard>
-              }
-            >
-              {/* Pulpit użytkownika (Dashboard) */}
-              <Route index element={<Dashboard />} />
-
-              {/* Baza artykułów i Kanban */}
-              <Route path="articles" element={<Articles />} />
-
-              {/* Edycja i szczegóły tekstu (Maszyna stanów, Komentarze, Upload) */}
-              <Route path="articles/:id" element={<ArticleEdit />} />
-
-              {/* Kalendarz planowanych publikacji */}
-              <Route path="calendar" element={<CalendarView />} />
-
-              {/* Panel admina (Dostępny wyłącznie dla roli ADMIN) */}
+              {/* ------------------------------------------------------------------
+                 TRASY CHRONIONE (Wymagają tokena JWT oraz Layoutu nawigacyjnego)
+                 ------------------------------------------------------------------ */}
               <Route 
-                path="admin" 
+                path="/" 
                 element={
-                  <RoleGuard allowedRoles={[Role.ADMIN]}>
-                    <AdminPanel />
-                  </RoleGuard>
+                  <AuthGuard>
+                    <Layout />
+                  </AuthGuard>
                 }
-              />
-            </Route>
+              >
+                {/* Pulpit użytkownika (Dashboard) */}
+                <Route index element={<Dashboard />} />
 
-            {/* Catch-all: w przypadku wpisania błędnej ścieżki, przekierowujemy do dashboardu */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Baza artykułów i Kanban */}
+                <Route path="articles" element={<Articles />} />
 
-          </Routes>
-        </NotificationProvider>
-      </AuthProvider>
+                {/* Edycja i szczegóły tekstu (Maszyna stanów, Komentarze, Upload) */}
+                <Route path="articles/:id" element={<ArticleEdit />} />
+
+                {/* Kalendarz planowanych publikacji */}
+                <Route path="calendar" element={<CalendarView />} />
+
+                {/* Panel admina (Dostępny wyłącznie dla roli ADMIN) */}
+                <Route 
+                  path="admin" 
+                  element={
+                    <RoleGuard allowedRoles={[Role.ADMIN]}>
+                      <AdminPanel />
+                    </RoleGuard>
+                  }
+                />
+              </Route>
+
+              {/* Catch-all: w przypadku wpisania błędnej ścieżki, przekierowujemy do dashboardu */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+
+            </Routes>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 };

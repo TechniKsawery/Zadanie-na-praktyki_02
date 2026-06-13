@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications, Toast } from '../context/NotificationContext';
+import { useTheme } from '../context/ThemeContext';
 import { Role } from '../types';
 import { 
   LayoutDashboard, 
@@ -19,12 +20,15 @@ import {
   Bell, 
   Check, 
   X, 
-  BookOpen
+  BookOpen,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
   const { notifications, unreadCount, toasts, removeToast, markAsRead, markAllAsRead } = useNotifications();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -154,10 +158,11 @@ export const Layout: React.FC = () => {
             </span>
           </div>
 
-          {/* Przycisk powiadomień */}
-          <div style={{ position: 'relative' }}>
+          {/* Kontrolki po prawej: Motyw i Powiadomienia */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={toggleTheme}
+              title={theme === 'light' ? 'Przełącz na ciemny motyw' : 'Przełącz na jasny motyw'}
               style={{
                 background: 'var(--bg-tertiary)',
                 border: '1px solid var(--border-light)',
@@ -167,15 +172,38 @@ export const Layout: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: showNotifications ? 'var(--color-primary)' : 'var(--text-primary)',
+                color: 'var(--text-primary)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
-                position: 'relative'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-light)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
             >
-              <Bell size={20} />
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+
+            {/* Przycisk powiadomień */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '50%',
+                  width: '42px',
+                  height: '42px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: showNotifications ? 'var(--color-primary)' : 'var(--text-primary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--border-light)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+              >
+                <Bell size={20} />
               
               {/* Czerwona kropka nieprzeczytanych powiadomień */}
               {unreadCount > 0 && (
@@ -319,7 +347,8 @@ export const Layout: React.FC = () => {
               </div>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Widoki podstron */}
         <main className="main-view">

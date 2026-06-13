@@ -139,7 +139,7 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
         <div style={{
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-light)',
           padding: '8px 16px',
           borderRadius: '30px',
@@ -181,7 +181,7 @@ export const Dashboard: React.FC = () => {
             fontWeight: 700,
             borderRadius: '6px',
             border: '1px solid var(--border-light)',
-            backgroundColor: activeTab === 'portal' ? 'var(--color-primary)' : '#ffffff',
+            backgroundColor: activeTab === 'portal' ? 'var(--color-primary)' : 'var(--bg-secondary)',
             color: activeTab === 'portal' ? '#ffffff' : 'var(--text-primary)',
             cursor: 'pointer',
             display: 'flex',
@@ -203,7 +203,7 @@ export const Dashboard: React.FC = () => {
             fontWeight: 700,
             borderRadius: '6px',
             border: '1px solid var(--border-light)',
-            backgroundColor: activeTab === 'stats' ? 'var(--color-primary)' : '#ffffff',
+            backgroundColor: activeTab === 'stats' ? 'var(--color-primary)' : 'var(--bg-secondary)',
             color: activeTab === 'stats' ? '#ffffff' : 'var(--text-primary)',
             cursor: 'pointer',
             display: 'flex',
@@ -260,7 +260,7 @@ export const Dashboard: React.FC = () => {
             {/* Lewa kolumna: Hero Artykuł */}
             <div>
               {articles.length === 0 ? (
-                <div style={{ padding: '80px 20px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+                <div style={{ padding: '80px 20px', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
                   Brak artykułów w bazie danych. Dodaj nowy temat w bazie artykułów!
                 </div>
               ) : (() => {
@@ -274,7 +274,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => navigate(`/articles/${heroArticle.id}`)}
                     style={{
                       cursor: 'pointer',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: 'var(--bg-secondary)',
                       borderRadius: '8px',
                       border: '1px solid var(--border-light)',
                       overflow: 'hidden',
@@ -313,10 +313,10 @@ export const Dashboard: React.FC = () => {
                       <span style={{ color: '#e2001a', fontWeight: 900, fontSize: '0.8rem', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '10px' }}>
                         {category}
                       </span>
-                      <h2 style={{ fontSize: '1.9rem', fontWeight: 900, lineHeight: '1.25', color: '#0f172a', marginBottom: '12px', fontFamily: 'Outfit' }}>
+                      <h2 style={{ fontSize: '1.9rem', fontWeight: 900, lineHeight: '1.25', color: 'var(--text-primary)', marginBottom: '12px', fontFamily: 'Outfit' }}>
                         {heroArticle.title}
                       </h2>
-                      <p style={{ color: '#475569', fontSize: '0.98rem', lineHeight: '1.5', marginBottom: '20px' }}>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.98rem', lineHeight: '1.5', marginBottom: '20px' }}>
                         {heroArticle.lead || 'Brak opisu wstępnego dla tego artykułu.'}
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -339,7 +339,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Prawa kolumna: Najnowsze wiadomości */}
             <div style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--bg-secondary)',
               borderRadius: '8px',
               border: '1px solid var(--border-light)',
               padding: '24px',
@@ -347,7 +347,7 @@ export const Dashboard: React.FC = () => {
               display: 'flex',
               flexDirection: 'column'
             }}>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', color: '#0f172a', letterSpacing: '0.05em', borderBottom: '2px solid #0f172a', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-primary)', letterSpacing: '0.05em', borderBottom: '2px solid var(--text-primary)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
                 Najnowsze w redakcji
               </h3>
@@ -361,7 +361,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => navigate(`/articles/${art.id}`)}
                       style={{ 
                         paddingBottom: '14px', 
-                        borderBottom: index === articles.slice(1, 8).length - 1 ? 'none' : '1px solid #f1f5f9',
+                        borderBottom: index === articles.slice(1, 8).length - 1 ? 'none' : '1px solid var(--border-light)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -373,14 +373,14 @@ export const Dashboard: React.FC = () => {
                       }}
                       onMouseLeave={(e) => {
                         const titleEl = e.currentTarget.querySelector('h4');
-                        if (titleEl) titleEl.style.color = '#1e293b';
+                        if (titleEl) titleEl.style.color = 'var(--text-primary)';
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', fontWeight: 800 }}>
                         <span style={{ color: '#ef4444' }}>{timeStr}</span>
                         <span style={{ color: '#64748b', textTransform: 'uppercase' }}>{category}</span>
                       </div>
-                      <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b', lineHeight: '1.4', transition: 'color 0.2s' }}>
+                      <h4 style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: '1.4', transition: 'color 0.2s' }}>
                         {art.title}
                       </h4>
                     </div>
@@ -397,11 +397,11 @@ export const Dashboard: React.FC = () => {
 
           {/* Dolna sekcja: Kafelki tematów (Grid 3-kolumnowy) */}
           <div>
-            <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', marginBottom: '20px', fontFamily: 'Outfit' }}>
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: '20px', fontFamily: 'Outfit' }}>
               Polecane w serwisie
             </h3>
             {articles.length <= 2 ? (
-              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
+              <div style={{ padding: '40px', textAlign: 'center', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-light)', color: 'var(--text-secondary)' }}>
                 Dodaj więcej artykułów, aby zapełnić grid polecanych treści!
               </div>
             ) : (
@@ -421,7 +421,7 @@ export const Dashboard: React.FC = () => {
                       onClick={() => navigate(`/articles/${art.id}`)}
                       style={{
                         cursor: 'pointer',
-                        backgroundColor: '#ffffff',
+                        backgroundColor: 'var(--bg-secondary)',
                         borderRadius: '8px',
                         border: '1px solid var(--border-light)',
                         overflow: 'hidden',
@@ -455,7 +455,7 @@ export const Dashboard: React.FC = () => {
                           <span style={{ color: '#e2001a', fontWeight: 800, fontSize: '0.72rem', letterSpacing: '0.05em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
                             {category}
                           </span>
-                          <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', lineHeight: '1.3', marginBottom: '8px' }}>
+                          <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: '1.3', marginBottom: '8px' }}>
                             {art.title}
                           </h4>
                           <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: '1.4', marginBottom: '14px' }}>

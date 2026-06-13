@@ -49,6 +49,43 @@
   --radius-lg: 16px;
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  --bg-kanban-column: #f1f5f9;
+}
+
+[data-theme='dark'] {
+  /* ----------------------------------------------------------------------------
+     PALETA KOLORÓW - DARK EDITORIAL (Czysty, spójny ciemny motyw)
+     ---------------------------------------------------------------------------- */
+  --bg-primary: #0b0f19;       /* Głęboki, elegancki grafitowo-granatowy */
+  --bg-secondary: #161f30;     /* Panel i karty, lekko jaśniejszy navy */
+  --bg-tertiary: #1f293d;      /* Ciemniejszy szaro-niebieski do hoverów/nagłówków */
+  --bg-dark-sidebar: #161f30;  /* Spójny ciemny sidebar */
+  
+  --border-light: #24324a;     /* Subtelne, ciemne obramowanie */
+  --border-focus: #e2001a;     /* Pozostaje portalowa czerwień */
+
+  --text-primary: #f8fafc;     /* Czysta, wyrazista biel dla optymalnego kontrastu */
+  --text-secondary: #94a3b8;   /* Średni szary/niebieskawy */
+  --text-muted: #64748b;       /* Ciemniejszy szary */
+
+  --color-accent: #f8fafc;     /* Głęboka czerń zamienia się w czystą biel */
+  
+  /* Kolory statusów workflow na ciemnym tle */
+  --status-idea: #94a3b8;      /* Slate */
+  --status-draft: #3b82f6;     /* Blue */
+  --status-review: #f59e0b;    /* Amber */
+  --status-approved: #10b981;  /* Emerald */
+  --status-scheduled: #84cc16; /* Lime */
+  --status-published: #06b6d4; /* Cyan */
+  --status-rejected: #ef4444;  /* Red */
+  
+  /* Cienie i poświaty dla ciemnego motywu (bardziej miękkie, ciemniejsze) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 36px -4px rgba(0, 0, 0, 0.5);
+  
+  --bg-kanban-column: #0e1420;
 }
 
 /* ----------------------------------------------------------------------------
@@ -97,11 +134,11 @@ a:hover {
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--border-light);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--text-muted);
 }
 
 /* ----------------------------------------------------------------------------
@@ -420,13 +457,13 @@ select option:hover, select option:focus {
   letter-spacing: 0.05em;
 }
 
-.badge-idea { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-.badge-draft { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-.badge-review { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-.badge-approved { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-.badge-scheduled { background: #f7fee7; color: #4d7c0f; border: 1px solid #d9f99d; }
-.badge-published { background: #ecfeff; color: #0e7490; border: 1px solid #a5f3fc; }
-.badge-rejected { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.badge-idea { background: rgba(100, 116, 139, 0.1); color: var(--status-idea); border: 1px solid rgba(100, 116, 139, 0.2); }
+.badge-draft { background: rgba(37, 99, 235, 0.1); color: var(--status-draft); border: 1px solid rgba(37, 99, 235, 0.2); }
+.badge-review { background: rgba(217, 119, 6, 0.1); color: var(--status-review); border: 1px solid rgba(217, 119, 6, 0.2); }
+.badge-approved { background: rgba(5, 150, 105, 0.1); color: var(--status-approved); border: 1px solid rgba(5, 150, 105, 0.2); }
+.badge-scheduled { background: rgba(101, 163, 13, 0.1); color: var(--status-scheduled); border: 1px solid rgba(101, 163, 13, 0.2); }
+.badge-published { background: rgba(8, 145, 178, 0.1); color: var(--status-published); border: 1px solid rgba(8, 145, 178, 0.2); }
+.badge-rejected { background: rgba(220, 38, 38, 0.1); color: var(--status-rejected); border: 1px solid rgba(220, 38, 38, 0.2); }
 
 /* ----------------------------------------------------------------------------
    KANBAN BOARD DLA ARTYKUŁÓW (EDITORIAL WORKFLOW KANBAN)
@@ -442,7 +479,7 @@ select option:hover, select option:focus {
 
 .kanban-column {
   flex: 0 0 320px;
-  background-color: #f1f5f9;
+  background-color: var(--bg-kanban-column);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 16px;
@@ -663,7 +700,7 @@ select option:hover, select option:focus {
   padding: 32px;
   overflow-y: auto;
   background-color: var(--bg-secondary);
-  color: #1a202c; /* Styl prasowy - mocny, ale nie całkowicie czarny */
+  color: var(--text-primary);
   line-height: 1.6;
 }
 
@@ -687,7 +724,7 @@ select option:hover, select option:focus {
   font-size: 2rem;
   font-weight: 800;
   line-height: 1.25;
-  color: #0f172a;
+  color: var(--text-primary);
   margin-bottom: 16px;
   letter-spacing: -0.03em;
 }
@@ -710,7 +747,7 @@ select option:hover, select option:focus {
 .portal-article-author-name {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .portal-article-meta {
@@ -721,7 +758,7 @@ select option:hover, select option:focus {
 .portal-article-lead {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 24px;
   border-left: 3px solid var(--color-primary);
@@ -730,7 +767,7 @@ select option:hover, select option:focus {
 
 .portal-article-content {
   font-size: 1rem;
-  color: #1e293b;
+  color: var(--text-primary);
 }
 
 .portal-article-content p {
@@ -739,7 +776,7 @@ select option:hover, select option:focus {
 }
 
 .portal-article-content h1, .portal-article-content h2, .portal-article-content h3 {
-  color: #0f172a;
+  color: var(--text-primary);
   margin-top: 28px;
   margin-bottom: 12px;
   font-family: 'Outfit', sans-serif;
@@ -761,7 +798,7 @@ select option:hover, select option:focus {
   margin: 20px 0;
   background-color: var(--bg-tertiary);
   font-style: italic;
-  color: #334155;
+  color: var(--text-secondary);
   font-size: 1.05rem;
 }
 
