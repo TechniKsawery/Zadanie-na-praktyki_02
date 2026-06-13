@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import api from '../services/api';
+import api, { BACKEND_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { Article, ArticleStatus, Role, User } from '../types';
@@ -507,7 +507,7 @@ export const ArticleEdit: React.FC = () => {
                     {/* Dynamic Hero Image */}
                     {article.uploads && article.uploads.length > 0 && article.uploads.some(up => up.mimetype.startsWith('image/')) ? (
                       <img 
-                        src={`http://localhost:5000${article.uploads.find(up => up.mimetype.startsWith('image/'))?.filepath}`} 
+                        src={`${BACKEND_URL}${article.uploads.find(up => up.mimetype.startsWith('image/'))?.filepath}`} 
                         alt="Ilustracja artykułu" 
                         className="portal-article-image" 
                       />
@@ -861,7 +861,7 @@ export const ArticleEdit: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
                       <File size={16} style={{ color: '#0891b2', flexShrink: 0 }} />
                       <a 
-                        href={`http://localhost:5000${up.filepath}`} 
+                        href={`${BACKEND_URL}${up.filepath}`} 
                         target="_blank" 
                         rel="noreferrer"
                         style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', fontWeight: 700 }}

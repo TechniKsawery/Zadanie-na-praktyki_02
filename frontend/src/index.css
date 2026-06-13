@@ -13,7 +13,7 @@
   --bg-primary: #f4f6f9;       /* Jasne tło główne */
   --bg-secondary: #ffffff;     /* Czysta biel paneli/kart */
   --bg-tertiary: #f8fafc;      /* Subtelny szary do hoverów i nagłówków */
-  --bg-dark-sidebar: #0f172a;  /* Głęboki granat do paska bocznego */
+  --bg-dark-sidebar: #ffffff;  /* Zmieniony na biały dla jednolitego wyglądu */
   
   --border-light: #e2e8f0;     /* Czyste, jasne obramowanie */
   --border-focus: #e2001a;     /* Czerwień portalowa Wmedia */
@@ -250,11 +250,11 @@ select option:hover, select option:focus {
   min-height: 100vh;
 }
 
-/* Sidebar boczny w ciemnym, eleganckim odcieniu Navy */
+/* Sidebar boczny w jasnym, czystym stylu dopasowanym do całości */
 .app-sidebar {
   width: 260px;
-  background-color: var(--bg-dark-sidebar);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -262,7 +262,7 @@ select option:hover, select option:focus {
   left: 0;
   top: 0;
   z-index: 90;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar-logo {
@@ -273,10 +273,10 @@ select option:hover, select option:focus {
   font-size: 1.35rem;
   font-family: 'Outfit', sans-serif;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffffff 40%, #fca5a5 100%);
+  background: linear-gradient(135deg, var(--text-primary) 40%, var(--color-primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .sidebar-menu {
@@ -294,30 +294,30 @@ select option:hover, select option:focus {
   gap: 12px;
   padding: 12px 16px;
   border-radius: var(--radius-sm);
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-weight: 600;
   font-size: 0.95rem;
   transition: all var(--transition-fast);
 }
 
 .menu-item:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
 }
 
 .menu-item.active {
-  color: #ffffff;
-  background-color: rgba(226, 0, 26, 0.15);
+  color: var(--color-primary);
+  background-color: rgba(226, 0, 26, 0.05);
   border-left: 3px solid var(--color-primary);
 }
 
 .sidebar-footer {
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--bg-tertiary);
 }
 
 .sidebar-footer-info {
@@ -347,6 +347,7 @@ select option:hover, select option:focus {
 .app-content {
   flex: 1;
   margin-left: 260px;
+  max-width: calc(100% - 260px);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -1037,6 +1038,7 @@ td {
   
   .app-content {
     margin-left: 0;
+    max-width: 100%;
   }
   
   .main-view {

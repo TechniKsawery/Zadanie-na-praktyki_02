@@ -62,6 +62,7 @@ export async function getArticles(filters: {
       reviewer: {
         select: { id: true, name: true, email: true, role: true }
       },
+      uploads: true,
       _count: {
         select: { comments: true }
       }

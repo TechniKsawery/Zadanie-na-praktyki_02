@@ -6,7 +6,7 @@
 // nowego artykułu oraz mechanizm awansu statusu zależny od ról.
 
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { BACKEND_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { Article, ArticleStatus, Role } from '../types';
@@ -231,11 +231,11 @@ export const Articles: React.FC = () => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           {/* Przełącznik Widoków */}
           <div style={{
             display: 'flex',
-            backgroundColor: 'rgba(255,255,255,0.03)',
+            backgroundColor: 'var(--bg-tertiary)',
             border: '1px solid var(--border-light)',
             borderRadius: '8px',
             padding: '2px'
@@ -243,16 +243,18 @@ export const Articles: React.FC = () => {
             <button 
               onClick={() => setViewType('kanban')}
               style={{
-                background: viewType === 'kanban' ? 'var(--bg-tertiary)' : 'none',
+                background: viewType === 'kanban' ? 'var(--bg-secondary)' : 'none',
+                boxShadow: viewType === 'kanban' ? 'var(--shadow-sm)' : 'none',
                 border: 'none',
-                color: viewType === 'kanban' ? '#fff' : '#9ca3af',
+                color: viewType === 'kanban' ? 'var(--text-primary)' : 'var(--text-secondary)',
                 padding: '8px 12px',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '0.85rem'
+                fontSize: '0.85rem',
+                fontWeight: 600
               }}
             >
               <KanbanSquare size={16} /> Kanban
@@ -260,16 +262,18 @@ export const Articles: React.FC = () => {
             <button 
               onClick={() => setViewType('list')}
               style={{
-                background: viewType === 'list' ? 'var(--bg-tertiary)' : 'none',
+                background: viewType === 'list' ? 'var(--bg-secondary)' : 'none',
+                boxShadow: viewType === 'list' ? 'var(--shadow-sm)' : 'none',
                 border: 'none',
-                color: viewType === 'list' ? '#fff' : '#9ca3af',
+                color: viewType === 'list' ? 'var(--text-primary)' : 'var(--text-secondary)',
                 padding: '8px 12px',
                 borderRadius: '6px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                fontSize: '0.85rem'
+                fontSize: '0.85rem',
+                fontWeight: 600
               }}
             >
               <List size={16} /> Lista
@@ -392,7 +396,7 @@ export const Articles: React.FC = () => {
                         >
                           {imagePath ? (
                             <img 
-                              src={`http://localhost:5000${imagePath}`} 
+                              src={`${BACKEND_URL}${imagePath}`} 
                               alt={art.title} 
                               style={{ width: '100%', height: '110px', objectFit: 'cover', borderRadius: '4px', marginBottom: '4px', border: '1px solid var(--border-light)' }} 
                             />
@@ -552,7 +556,7 @@ export const Articles: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         {imagePath ? (
                           <img 
-                            src={`http://localhost:5000${imagePath}`} 
+                            src={`${BACKEND_URL}${imagePath}`} 
                             alt={art.title} 
                             style={{ width: '50px', height: '38px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-light)', flexShrink: 0 }} 
                           />

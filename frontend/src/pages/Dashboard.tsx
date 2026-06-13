@@ -6,7 +6,7 @@
 // ostatnich logów aktywności redakcyjnej w czasie rzeczywistym.
 
 import React, { useState, useEffect } from 'react';
-import api from '../services/api';
+import api, { BACKEND_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { DashboardStats, ArticleStatus, Role } from '../types';
 import { 
@@ -223,31 +223,32 @@ export const Dashboard: React.FC = () => {
           {/* Menu kategorii portalowych - Wmedia style */}
           <div style={{
             display: 'flex',
-            backgroundColor: 'var(--bg-dark-sidebar)',
+            backgroundColor: 'var(--bg-secondary)',
+            border: '1px solid var(--border-light)',
             borderRadius: '8px',
             padding: '4px 20px',
             gap: '24px',
             overflowX: 'auto',
             alignItems: 'center',
-            boxShadow: 'var(--shadow-md)',
+            boxShadow: 'var(--shadow-sm)',
             whiteSpace: 'nowrap'
           }}>
-            <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '1rem', letterSpacing: '0.05em', borderRight: '2px solid #e2001a', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 900, fontSize: '1rem', letterSpacing: '0.05em', borderRight: '2px solid #e2001a', paddingRight: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: '#e2001a' }}>wmedia</span>sport
             </span>
             {['PIŁKA NOŻNA', 'SIATKÓWKA', 'KOSZYKÓWKA', 'SKOKI NARCIARSKIE', 'FORMUŁA 1', 'BOKS', 'INNE'].map((cat, idx) => (
               <span 
                 key={idx} 
                 style={{ 
-                  color: idx === 0 ? '#e2001a' : '#cbd5e1', 
+                  color: idx === 0 ? '#e2001a' : 'var(--text-secondary)', 
                   fontSize: '0.78rem', 
                   fontWeight: 800, 
                   cursor: 'pointer', 
                   padding: '12px 0', 
                   transition: 'color 0.2s' 
                 }}
-                onMouseEnter={(e) => idx !== 0 && (e.currentTarget.style.color = '#ffffff')}
-                onMouseLeave={(e) => idx !== 0 && (e.currentTarget.style.color = '#cbd5e1')}
+                onMouseEnter={(e) => idx !== 0 && (e.currentTarget.style.color = 'var(--text-primary)')}
+                onMouseLeave={(e) => idx !== 0 && (e.currentTarget.style.color = 'var(--text-secondary)')}
               >
                 {cat}
               </span>
@@ -292,7 +293,7 @@ export const Dashboard: React.FC = () => {
                     {imagePath ? (
                       <div style={{ position: 'relative', height: '380px', width: '100%', overflow: 'hidden' }}>
                         <img 
-                          src={`http://localhost:5000${imagePath}`} 
+                          src={`${BACKEND_URL}${imagePath}`} 
                           alt={heroArticle.title} 
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                         />
@@ -440,7 +441,7 @@ export const Dashboard: React.FC = () => {
                     >
                       {imagePath ? (
                         <img 
-                          src={`http://localhost:5000${imagePath}`} 
+                          src={`${BACKEND_URL}${imagePath}`} 
                           alt={art.title} 
                           style={{ width: '100%', height: '170px', objectFit: 'cover' }} 
                         />
