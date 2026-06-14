@@ -109,12 +109,13 @@ export async function getArticleById(id: number) {
 /**
  * Tworzy nowy artykuł w statusie IDEA (domyślnie).
  */
-export async function createArticle(authorId: number, title: string, lead: string, content: string) {
+export async function createArticle(authorId: number, title: string, lead: string, content: string, category: string = 'SPORT') {
   const article = await prisma.article.create({
     data: {
       title,
       lead,
       content,
+      category,
       status: ArticleStatus.IDEA,
       authorId
     }
@@ -154,7 +155,16 @@ export async function updateArticle(
   userId: number,
   role: Role,
   articleId: number,
-  data: { title?: string; lead?: string; content?: string; reviewerId?: number | null }
+  data: { 
+    title?: string; 
+    lead?: string; 
+    content?: string; 
+    reviewerId?: number | null;
+    category?: string;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    metaImage?: string | null;
+  }
 ) {
   const article = await prisma.article.findUnique({
     where: { id: articleId }
@@ -172,6 +182,31 @@ export async function updateArticle(
   
   if (role === Role.REVIEWER) {
     throw new Error('Brak uprawnień. Recenzenci nie mogą edytować bezpośrednio treści artykułu.');
+  }
+
+  // Stwórz wersję historyczną przed zapisem nowych danych, jeśli zmienia się treść/tytuł/lead
+  const hasContentChanges = 
+    (data.title !== undefined && data.title !== article.title) ||
+    (data.lead !== undefined && data.lead !== article.lead) ||
+    (data.content !== undefined && data.content !== article.content);
+
+  if (hasContentChanges) {
+    const lastVersion = await prisma.articleVersion.findFirst({
+      where: { articleId },
+      orderBy: { versionNumber: 'desc' }
+    });
+    const nextVersionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
+
+    await prisma.articleVersion.create({
+      data: {
+        articleId,
+        userId,
+        title: article.title,
+        lead: article.lead,
+        content: article.content,
+        versionNumber: nextVersionNumber
+      }
+    });
   }
 
   const updatedArticle = await prisma.article.update({
@@ -463,4 +498,106 @@ export async function addComment(userId: number, articleId: number, content: str
   broadcastNotification('comment_added', { articleId, comment });
 
   return comment;
+}
+
+/**
+ * Pobiera listę wersji edycyjnych tekstu artykułu.
+ */
+export async function getArticleVersions(articleId: number) {
+  return prisma.articleVersion.findMany({
+    where: { articleId },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true, role: true }
+      }
+    },
+    orderBy: { versionNumber: 'desc' }
+  });
+}
+
+/**
+ * Przywraca treść artykułu z wybranej wersji historycznej.
+ */
+export async function rollbackArticleVersion(
+  userId: number,
+  role: Role,
+  articleId: number,
+  versionId: number
+) {
+  const article = await prisma.article.findUnique({
+    where: { id: articleId }
+  });
+
+  if (!article) {
+    throw new Error('Artykuł nie istnieje.');
+  }
+
+  // Sprawdzanie uprawnień
+  if (role === Role.AUTHOR && article.authorId !== userId) {
+    throw new Error('Brak uprawnień. Autor może przywracać tylko własne artykuły.');
+  }
+  if (role === Role.REVIEWER) {
+    throw new Error('Brak uprawnień. Recenzenci nie mogą edytować treści.');
+  }
+
+  const targetVersion = await prisma.articleVersion.findFirst({
+    where: { id: versionId, articleId }
+  });
+
+  if (!targetVersion) {
+    throw new Error('Wybrana wersja nie istnieje lub nie należy do tego artykułu.');
+  }
+
+  // Stwórz wersję historyczną przed nadpisaniem (aby dało się cofnąć sam rollback)
+  const lastVersion = await prisma.articleVersion.findFirst({
+    where: { articleId },
+    orderBy: { versionNumber: 'desc' }
+  });
+  const nextVersionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
+
+  await prisma.articleVersion.create({
+    data: {
+      articleId,
+      userId,
+      title: article.title,
+      lead: article.lead,
+      content: article.content,
+      versionNumber: nextVersionNumber
+    }
+  });
+
+  // Przywróć treść
+  const updatedArticle = await prisma.article.update({
+    where: { id: articleId },
+    data: {
+      title: targetVersion.title,
+      lead: targetVersion.lead,
+      content: targetVersion.content
+    }
+  });
+
+  // Dodaj wpis do historii workflowu
+  await prisma.articleHistory.create({
+    data: {
+      articleId,
+      userId,
+      oldStatus: article.status,
+      newStatus: article.status,
+      comment: `Przywrócono treść z wersji historycznej nr ${targetVersion.versionNumber}.`
+    }
+  });
+
+  // Log systemowy
+  await prisma.activityLog.create({
+    data: {
+      userId,
+      action: 'ARTICLE_ROLLBACK',
+      details: `Przywrócono artykuł ID:${articleId} do wersji nr ${targetVersion.versionNumber}`
+    }
+  });
+
+  // Powiadomienie realtime
+  broadcastNotification('article_updated', { articleId, status: article.status });
+
+  return updatedArticle;
 }

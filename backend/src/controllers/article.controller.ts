@@ -71,10 +71,10 @@ export async function getArticleById(req: Request, res: Response) {
  */
 export async function createArticle(req: Request, res: Response) {
   try {
-    const { title, lead, content } = req.body;
+    const { title, lead, content, category } = req.body;
     const authorId = req.user!.id; // Zapisany przez middleware JWT
     
-    const article = await articleService.createArticle(authorId, title, lead, content);
+    const article = await articleService.createArticle(authorId, title, lead, content, category);
     
     return res.status(201).json({
       success: true,
@@ -98,13 +98,17 @@ export async function updateArticle(req: Request, res: Response) {
     const articleId = parseInt(req.params.id);
     const userId = req.user!.id;
     const role = req.user!.role;
-    const { title, lead, content, reviewerId } = req.body;
+    const { title, lead, content, reviewerId, category, metaTitle, metaDescription, metaImage } = req.body;
     
     const updated = await articleService.updateArticle(userId, role, articleId, {
       title,
       lead,
       content,
-      reviewerId
+      reviewerId,
+      category,
+      metaTitle,
+      metaDescription,
+      metaImage
     });
     
     return res.status(200).json({
@@ -299,6 +303,53 @@ export async function uploadFile(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       message: 'Wystąpił błąd podczas wgrywania pliku.',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Pobiera wersje historyczne tekstu artykułu.
+ */
+export async function getArticleVersions(req: Request, res: Response) {
+  try {
+    const articleId = parseInt(req.params.id);
+    const versions = await articleService.getArticleVersions(articleId);
+    
+    return res.status(200).json({
+      success: true,
+      versions
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      success: false,
+      message: 'Błąd podczas pobierania historii wersji.',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Przywraca określoną wersję artykułu (rollback).
+ */
+export async function rollbackVersion(req: Request, res: Response) {
+  try {
+    const articleId = parseInt(req.params.id);
+    const versionId = parseInt(req.params.versionId);
+    const userId = req.user!.id;
+    const role = req.user!.role;
+    
+    const updated = await articleService.rollbackArticleVersion(userId, role, articleId, versionId);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Wersja artykułu została pomyślnie przywrócona.',
+      article: updated
+    });
+  } catch (error: any) {
+    return res.status(400).json({
+      success: false,
+      message: 'Błąd podczas przywracania wersji artykułu.',
       error: error.message
     });
   }

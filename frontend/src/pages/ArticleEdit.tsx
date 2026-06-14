@@ -7,7 +7,7 @@
 // rzeczywistym oraz moduł załączników (upload plików).
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useBlocker } from 'react-router-dom';
 import api, { BACKEND_URL } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -23,7 +23,20 @@ import {
   Calendar,
   UserCheck,
   File,
-  Eye
+  Eye,
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  Heading3,
+  Code,
+  Quote,
+  List as ListIcon,
+  Link as LinkIcon,
+  Globe,
+  RefreshCw,
+  AlertCircle,
+  Share2
 } from 'lucide-react';
 
 const getMockCategoryAndGradient = (id: number) => {
@@ -57,6 +70,36 @@ export const ArticleEdit: React.FC = () => {
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [editorMode, setEditorMode] = useState<'split' | 'edit' | 'preview'>('split');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Stan SEO i autozapisu
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [metaImage, setMetaImage] = useState('');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
+  const [recoveryAvailable, setRecoveryAvailable] = useState<boolean>(false);
+  const [recoveredDraft, setRecoveredDraft] = useState<{ title: string, lead: string, content: string, timestamp: number } | null>(null);
+
+  // Stan wersji
+  const [versions, setVersions] = useState<any[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState<boolean>(false);
+
+  // Sprawdzamy czy użytkownik to autor tekstu
+  const isAuthor = article?.authorId === user?.id;
+  const isEditorOrAdmin = user?.role === Role.EDITOR || user?.role === Role.ADMIN;
+  const isReviewer = user?.role === Role.REVIEWER;
+
+  function isOwnDraftOrIdea() {
+    if (!article) return false;
+    return isAuthor && (
+      article.status === ArticleStatus.IDEA || 
+      article.status === ArticleStatus.DRAFT || 
+      article.status === ArticleStatus.REJECTED
+    );
+  }
+
+  // Możliwość edycji treści (tylko autor lub redaktor/admin)
+  const canEditContent = isOwnDraftOrIdea() || isEditorOrAdmin;
 
   // Stan workflow
   const [selectedReviewer, setSelectedReviewer] = useState<number | null>(null);
@@ -125,6 +168,9 @@ export const ArticleEdit: React.FC = () => {
       setLead(art.lead);
       setContent(art.content);
       setSelectedReviewer(art.reviewerId);
+      setMetaTitle(art.metaTitle || '');
+      setMetaDescription(art.metaDescription || '');
+      setMetaImage(art.metaImage || '');
       
       if (art.scheduledAt) {
         // Formatuje datę na format odpowiedni do input[type="datetime-local"]
@@ -143,6 +189,67 @@ export const ArticleEdit: React.FC = () => {
     }
   };
 
+  const fetchVersions = async () => {
+    try {
+      setVersionsLoading(true);
+      const response = await api.get(`/articles/${id}/versions`);
+      setVersions(response.data.versions || []);
+    } catch (err) {
+      console.error('Błąd pobierania wersji:', err);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleRollback = async (versionId: number, versionNum: number) => {
+    if (!window.confirm(`Czy na pewno chcesz przywrócić wersję #${versionNum}? Obecny tekst zostanie zapisany jako nowa wersja.`)) {
+      return;
+    }
+    try {
+      setSaving(true);
+      await api.post(`/articles/${id}/versions/${versionId}/rollback`);
+      addToast('Sukces', `Przywrócono wersję #${versionNum}`, 'success');
+      localStorage.removeItem(`wmedia-autosave-${id}`);
+      setRecoveryAvailable(false);
+      setRecoveredDraft(null);
+      await fetchArticleDetails();
+      await fetchVersions();
+    } catch (error: any) {
+      addToast('Błąd', error.response?.data?.message || 'Nie udało się przywrócić wersji.', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const insertMarkdown = (syntaxBefore: string, syntaxAfter: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    const replacement = syntaxBefore + selectedText + syntaxAfter;
+    const newContent = text.substring(0, start) + replacement + text.substring(end);
+    setContent(newContent);
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + syntaxBefore.length, start + syntaxBefore.length + selectedText.length);
+    }, 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      insertMarkdown('**', '**');
+    } else if (e.ctrlKey && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      insertMarkdown('*', '*');
+    }
+  };
+
   const fetchReviewers = async () => {
     try {
       const response = await api.get('/admin/users');
@@ -154,9 +261,121 @@ export const ArticleEdit: React.FC = () => {
     }
   };
 
+  // Ładowanie autozapisu z localStorage przy starcie
+  useEffect(() => {
+    if (!article) return;
+    const saved = localStorage.getItem(`wmedia-autosave-${article.id}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const hasDifferences = 
+          parsed.title !== article.title || 
+          parsed.lead !== article.lead || 
+          parsed.content !== article.content;
+        
+        // Jeśli są różnice między zapisanym w localStorage szkicem a bazą, pokazujemy opcję przywrócenia
+        if (hasDifferences) {
+          setRecoveredDraft(parsed);
+          setRecoveryAvailable(true);
+        } else {
+          // Jeżeli tekst z bazy jest taki sam jak szkic w localStorage, można go bezpiecznie usunąć.
+          localStorage.removeItem(`wmedia-autosave-${article.id}`);
+          setRecoveryAvailable(false);
+          setRecoveredDraft(null);
+        }
+      } catch (err) {
+        console.error('Błąd wczytywania autozapisu:', err);
+      }
+    }
+  }, [article?.id, article?.updatedAt]);
+
+  // Sprawdzamy czy są niezapisane zmiany (tekst, lead lub pola SEO) w stosunku do bazy danych
+  const isDirty = article ? (
+    title !== article.title ||
+    lead !== article.lead ||
+    content !== article.content ||
+    metaTitle !== (article.metaTitle || '') ||
+    metaDescription !== (article.metaDescription || '') ||
+    metaImage !== (article.metaImage || '')
+  ) : false;
+
+  // Ref do trzymania aktualnej wartości isDirty w celu uniknięcia stale closures w zdarzeniach i blockerach
+  const isDirtyRef = useRef(isDirty);
+  useEffect(() => {
+    isDirtyRef.current = isDirty;
+  }, [isDirty]);
+
+  // Ostrzeżenie przed zamknięciem karty lub przeładowaniem strony z niezapisanymi zmianami
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+        // Nowoczesne przeglądarki ignorują własny tekst, pokazują własną wiadomość
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Blokowanie nawigacji wewnątrz aplikacji (np. kliknięcie w link do innej strony w menu)
+  // Zabezpieczenie przed podwójnym wywołaniem w React.StrictMode
+  const isHandlingBlockRef = useRef(false);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirtyRef.current && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  useEffect(() => {
+    // Zabezpieczenie przed podwójnym wywołaniem w React.StrictMode
+    if (blocker.state === 'blocked' && !isHandlingBlockRef.current) {
+      isHandlingBlockRef.current = true;
+      // Małe opóźnienie, aby React zdążył zaktualizować stan przed dialogiem
+      const confirmLeave = window.confirm(
+        'Masz niezapisane zmiany!\n\nCzy na pewno chcesz opuścić tę stronę? Twoja praca zostanie zapisana lokalnie w przeglądarce, ale zmiany nie trafią do bazy danych.'
+      );
+      if (confirmLeave) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
+      isHandlingBlockRef.current = false;
+    }
+  }, [blocker.state]);
+
+  // Natychmiastowy autozapis z debouncem 1s przy każdej edycji
+  useEffect(() => {
+    if (!article || !canEditContent) return;
+
+    const isDifferentFromDb = title !== article.title || lead !== article.lead || content !== article.content;
+
+    if (!isDifferentFromDb) {
+      // Usunęliśmy twarde kasowanie localStorage w tym miejscu, aby nie nadpisywać 
+      // i nie tracić szkiców podczas nawigacji między artykułami.
+      setAutoSaveStatus('');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const draft = {
+        title,
+        lead,
+        content,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(`wmedia-autosave-${article.id}`, JSON.stringify(draft));
+      const timeStr = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setAutoSaveStatus(`Zapisano roboczo w przeglądarce o ${timeStr}`);
+    }, 1000); // 1 sekunda debounce
+
+    return () => clearTimeout(timer);
+  }, [title, lead, content, article?.id, canEditContent]);
+
   useEffect(() => {
     fetchArticleDetails();
     fetchReviewers();
+    fetchVersions();
 
     // Słuchamy odświeżeń Socket.IO w czasie rzeczywistym
     const handleArticleChange = (e: Event) => {
@@ -199,7 +418,14 @@ export const ArticleEdit: React.FC = () => {
   const handleSaveContent = async () => {
     setSaving(true);
     try {
-      const updateData: any = { title, lead, content };
+      const updateData: any = { 
+        title, 
+        lead, 
+        content,
+        metaTitle: metaTitle || null,
+        metaDescription: metaDescription || null,
+        metaImage: metaImage || null
+      };
       // Edytor może też przypisywać recenzenta w tym formularzu
       if (user?.role === Role.EDITOR || user?.role === Role.ADMIN) {
         updateData.reviewerId = selectedReviewer;
@@ -207,7 +433,12 @@ export const ArticleEdit: React.FC = () => {
 
       await api.patch(`/articles/${id}`, updateData);
       addToast('Sukces', 'Artykuł został pomyślnie zapisany.', 'success');
+      localStorage.removeItem(`wmedia-autosave-${id}`);
+      setRecoveryAvailable(false);
+      setRecoveredDraft(null);
+      setAutoSaveStatus('Zmiany zapisane w bazie.');
       fetchArticleDetails();
+      fetchVersions();
     } catch (error: any) {
       addToast('Błąd', error.response?.data?.message || 'Nie udało się zapisać artykułu.', 'error');
     } finally {
@@ -299,22 +530,7 @@ export const ArticleEdit: React.FC = () => {
     [ArticleStatus.REJECTED]: 'Odrzucony'
   };
 
-  // Sprawdzamy czy użytkownik to autor tekstu
-  const isAuthor = article?.authorId === user?.id;
-  const isEditorOrAdmin = user?.role === Role.EDITOR || user?.role === Role.ADMIN;
-  const isReviewer = user?.role === Role.REVIEWER;
 
-  // Możliwość edycji treści (tylko autor lub redaktor/admin)
-  const canEditContent = isOwnDraftOrIdea() || isEditorOrAdmin;
-  
-  function isOwnDraftOrIdea() {
-    if (!article) return false;
-    return isAuthor && (
-      article.status === ArticleStatus.IDEA || 
-      article.status === ArticleStatus.DRAFT || 
-      article.status === ArticleStatus.REJECTED
-    );
-  }
 
   if (loading || !article) {
     return (
@@ -326,13 +542,88 @@ export const ArticleEdit: React.FC = () => {
 
   return (
     <div className="animate-slide-in">
+      {/* Baner odzyskiwania autozapisu */}
+      {recoveryAvailable && recoveredDraft && (
+        <div className="glass-panel" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 24px',
+          marginBottom: '24px',
+          borderLeft: '4px solid var(--status-review)',
+          backgroundColor: 'var(--bg-tertiary)',
+          gap: '16px',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <AlertCircle size={20} style={{ color: 'var(--status-review)', flexShrink: 0 }} />
+            <div>
+              <span style={{ fontWeight: 700, display: 'block', fontSize: '0.95rem' }}>
+                Wykryto nowszą lokalną kopię roboczą!
+              </span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                Zapisano automatycznie w przeglądarce: {new Date(recoveredDraft.timestamp).toLocaleString('pl-PL')}. Czy chcesz przywrócić tę wersję i nadpisać obecny stan w edytorze?
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              type="button"
+              onClick={() => {
+                setTitle(recoveredDraft.title);
+                setLead(recoveredDraft.lead);
+                setContent(recoveredDraft.content);
+                setRecoveryAvailable(false);
+                addToast('Sukces', 'Przywrócono szkic z pamięci przeglądarki.', 'success');
+              }}
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: 'var(--status-review)', border: 'none' }}
+            >
+              Przywróć kopię
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                localStorage.removeItem(`wmedia-autosave-${id}`);
+                setRecoveryAvailable(false);
+                setRecoveredDraft(null);
+                addToast('Informacja', 'Odrzucono kopię roboczą.', 'info');
+              }}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+            >
+              Odrzuć
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ------------------------------------------------------------------------
          GÓRNY RETRO PASEK
          ------------------------------------------------------------------------ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-        <Link to="/articles" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-          <ArrowLeft size={16} /> Powrót do bazy
-        </Link>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link to="/articles" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+            <ArrowLeft size={16} /> Powrót do bazy
+          </Link>
+          {isDirty && (
+            <div style={{ 
+              backgroundColor: '#fef3c7', 
+              color: '#d97706', 
+              padding: '6px 12px', 
+              borderRadius: '20px', 
+              fontSize: '0.8rem', 
+              fontWeight: 700, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px',
+              border: '1px solid #fcd34d',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}>
+              <AlertCircle size={16} /> Niezapisane zmiany! (Kliknij Zapisz)
+            </div>
+          )}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status tekstu:</span>
           <span className={`badge badge-${article.status.toLowerCase()}`}>
@@ -471,14 +762,152 @@ export const ArticleEdit: React.FC = () => {
               }}
             >
               {(editorMode === 'split' || editorMode === 'edit') && (
-                <div style={{ height: '100%' }}>
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {/* Pasek narzędzi formatowania Markdown */}
+                  {canEditContent && (
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '4px',
+                      padding: '8px',
+                      backgroundColor: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-light)',
+                      borderBottom: 'none',
+                      borderTopLeftRadius: 'var(--radius-sm)',
+                      borderTopRightRadius: 'var(--radius-sm)',
+                      alignItems: 'center'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('**', '**')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Pogrubienie (Ctrl+B)"
+                      >
+                        <Bold size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('*', '*')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Kursywa (Ctrl+I)"
+                      >
+                        <Italic size={16} />
+                      </button>
+                      
+                      <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-light)', margin: '0 4px' }} />
+
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('# ')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Nagłówek H1"
+                      >
+                        <Heading1 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('## ')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Nagłówek H2"
+                      >
+                        <Heading2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('### ')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Nagłówek H3"
+                      >
+                        <Heading3 size={16} />
+                      </button>
+
+                      <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-light)', margin: '0 4px' }} />
+
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('```\n', '\n```')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Blok kodu"
+                      >
+                        <Code size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('> ')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Cytat"
+                      >
+                        <Quote size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('- ')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Lista punktowana"
+                      >
+                        <ListIcon size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => insertMarkdown('[', '](url)')}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Dodaj link"
+                      >
+                        <LinkIcon size={16} />
+                      </button>
+
+                      {/* Status autozapisu i zapisu w bazie */}
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                        {isDirty ? (
+                          <span style={{ color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px' }} title="Zmiany w edytorze różnią się od zapisanych w bazie danych">
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#d97706', display: 'inline-block' }} />
+                            Niezapisane zmiany
+                          </span>
+                        ) : (
+                          <span style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }} title="Wszystkie wprowadzone dane są zsynchronizowane z bazą danych">
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#059669', display: 'inline-block' }} />
+                            Zsynchronizowano
+                          </span>
+                        )}
+                        {autoSaveStatus && (
+                          <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                            ({autoSaveStatus})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <textarea 
+                    ref={textareaRef}
                     className="editor-textarea"
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     disabled={!canEditContent || saving}
                     placeholder="# Nagłówek sekcji&#10;&#10;Zacznij pisać treść artykułu... Możesz używać tagów Markdown, np. **pogrubienie**, *kursywa*, czy `kod`."
-                    style={{ height: '100%', resize: 'none' }}
+                    style={{ 
+                      height: '100%', 
+                      resize: 'none',
+                      ...(canEditContent ? { borderTopLeftRadius: 0, borderTopRightRadius: 0 } : {})
+                    }}
                   />
                 </div>
               )}
@@ -556,6 +985,204 @@ export const ArticleEdit: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* GENERATOR META TAGÓW I PREVIEW SEO */}
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Outfit' }}>
+              <Globe size={20} style={{ color: 'var(--status-scheduled)' }} />
+              Generator Meta Tagów & Open Graph (SEO)
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              {/* Formularz SEO */}
+              <div>
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label">Meta Tytuł (SEO Title)</label>
+                    <span style={{ fontSize: '0.75rem', color: metaTitle.length >= 50 && metaTitle.length <= 60 ? '#059669' : 'var(--text-secondary)' }}>
+                      {metaTitle.length} / 60 znaków (zalecane: 50-60)
+                    </span>
+                  </div>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={metaTitle}
+                    onChange={(e) => setMetaTitle(e.target.value)}
+                    disabled={!canEditContent || saving}
+                    placeholder="np. Nowe Trendy w UX w 2026 r. - Co Się Zmieni?"
+                    style={{ fontSize: '0.9rem' }}
+                  />
+                  <div style={{ height: '4px', backgroundColor: 'var(--border-light)', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, (metaTitle.length / 60) * 100)}%`,
+                      backgroundColor: metaTitle.length >= 50 && metaTitle.length <= 60 ? '#059669' : metaTitle.length > 60 ? '#dc2626' : '#d97706',
+                      transition: 'all 0.3s'
+                    }} />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label">Meta Opis (SEO Description)</label>
+                    <span style={{ fontSize: '0.75rem', color: metaDescription.length >= 150 && metaDescription.length <= 160 ? '#059669' : 'var(--text-secondary)' }}>
+                      {metaDescription.length} / 160 znaków (zalecane: 150-160)
+                    </span>
+                  </div>
+                  <textarea 
+                    className="form-input" 
+                    rows={3}
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    disabled={!canEditContent || saving}
+                    placeholder="np. Zobacz najnowsze prognozy i trendy w projektowaniu interfejsów na rok 2026. Dowiedz się, jak sztuczna inteligencja wpłynie na codzienną pracę designerów."
+                    style={{ resize: 'none', fontSize: '0.88rem' }}
+                  />
+                  <div style={{ height: '4px', backgroundColor: 'var(--border-light)', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: `${Math.min(100, (metaDescription.length / 160) * 100)}%`,
+                      backgroundColor: metaDescription.length >= 150 && metaDescription.length <= 160 ? '#059669' : metaDescription.length > 160 ? '#dc2626' : '#d97706',
+                      transition: 'all 0.3s'
+                    }} />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Meta Zdjęcie (Open Graph Image)</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {article.uploads && article.uploads.filter(up => up.mimetype.startsWith('image/')).length > 0 ? (
+                      <select 
+                        className="form-input form-select"
+                        value={metaImage}
+                        onChange={(e) => setMetaImage(e.target.value)}
+                        disabled={!canEditContent || saving}
+                        style={{ fontSize: '0.88rem' }}
+                      >
+                        <option value="">-- Wybierz grafikę z załączników (lub wklej URL poniżej) --</option>
+                        {article.uploads
+                          .filter(up => up.mimetype.startsWith('image/'))
+                          .map(up => (
+                            <option key={up.id} value={`${BACKEND_URL}${up.filepath}`}>{up.filename}</option>
+                          ))
+                        }
+                      </select>
+                    ) : (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', padding: '6px 10px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+                        Brak załączników graficznych. Wgraj grafikę w panelu po prawej, by wybrać ją tutaj.
+                      </div>
+                    )}
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={metaImage}
+                      onChange={(e) => setMetaImage(e.target.value)}
+                      disabled={!canEditContent || saving}
+                      placeholder="Wklej własny adres URL zdjęcia lub wybierz z listy..."
+                      style={{ fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Podglądy */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Google Preview */}
+                <div>
+                  <h4 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    🖥️ Podgląd w Google Search
+                  </h4>
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '8px',
+                    fontFamily: 'Arial, sans-serif'
+                  }}>
+                    <span style={{ fontSize: '12px', color: '#4d5156', display: 'block', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      https://wmedia.pl › artykul › {article.id}
+                    </span>
+                    <h4 style={{
+                      fontSize: '18px',
+                      color: '#1a0dab',
+                      lineHeight: '1.3',
+                      fontWeight: 'normal',
+                      margin: '0 0 4px 0',
+                      fontFamily: 'Arial, sans-serif',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                    >
+                      {metaTitle || title || 'Brak tytułu meta'}
+                    </h4>
+                    <p style={{ fontSize: '13px', color: '#4d5156', lineHeight: '1.57', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {metaDescription || lead || 'Proszę uzupełnić opis meta, aby poprawić optymalizację SEO i współczynnik klikalności (CTR) w wyszukiwarce.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Facebook Preview */}
+                <div>
+                  <h4 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Share2 size={14} style={{ color: '#1877f2' }} /> Podgląd w Social Media
+                  </h4>
+                  <div style={{
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    backgroundColor: 'var(--bg-secondary)',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif'
+                  }}>
+                    {/* Cover photo */}
+                    <div style={{ height: '180px', backgroundColor: 'var(--bg-tertiary)', overflow: 'hidden', position: 'relative' }}>
+                      {metaImage ? (
+                        <img 
+                          src={metaImage} 
+                          alt="SEO Cover" 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const sibling = e.currentTarget.nextElementSibling as HTMLDivElement;
+                            if (sibling) sibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div style={{
+                        display: metaImage ? 'none' : 'flex',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-muted)',
+                        fontSize: '2rem'
+                      }}>
+                        🖼️
+                      </div>
+                    </div>
+                    {/* Meta info */}
+                    <div style={{ padding: '12px', borderTop: '1px solid var(--border-light)', backgroundColor: 'var(--bg-tertiary)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '3px', fontWeight: 600 }}>
+                        WMEDIA.PL
+                      </span>
+                      <h5 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {metaTitle || title || 'Brak tytułu meta'}
+                      </h5>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
+                        {metaDescription || lead || 'Wmedia Redakcja Portalowa...'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* DYSKUSJA I UWAGI (KOMENTARZE REALTIME) */}
@@ -893,6 +1520,65 @@ export const ArticleEdit: React.FC = () => {
             >
               <UploadIcon size={16} /> {uploadLoading ? 'Przesyłanie...' : 'Wgraj ilustrację prasową'}
             </button>
+          </div>
+
+          {/* HISTORIA WERSJI TEKSTU (Article Versions) */}
+          <div className="glass-panel" style={{ padding: '28px' }}>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontFamily: 'Outfit', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <History size={20} style={{ color: 'var(--color-primary)' }} />
+              Historia Zmian Tekstu
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '350px', overflowY: 'auto', paddingRight: '4px' }}>
+              {versionsLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  Ładowanie wersji...
+                </div>
+              ) : versions.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', border: '1px dashed var(--border-light)', borderRadius: '6px' }}>
+                  Brak zapisanych wersji historycznych. Pierwsza wersja powstanie przy edycji tekstu.
+                </div>
+              ) : (
+                versions.map((ver) => (
+                  <div 
+                    key={ver.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      padding: '12px 14px',
+                      backgroundColor: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: '8px',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                        Wersja #{ver.versionNumber}
+                      </span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500 }}>
+                        {new Date(ver.createdAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      Autor zmian: <strong style={{ color: 'var(--text-primary)' }}>{ver.user.name}</strong>
+                    </div>
+                    {canEditContent && (
+                      <button
+                        type="button"
+                        onClick={() => handleRollback(ver.id, ver.versionNumber)}
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'center', width: '100%', marginTop: '4px' }}
+                        disabled={saving}
+                      >
+                        <RefreshCw size={12} /> Przywróć tę wersję
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           {/* HISTORIA ZMIAN STATUSÓW (Timeline) */}

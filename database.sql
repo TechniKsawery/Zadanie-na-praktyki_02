@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS "Notification" CASCADE;
 DROP TABLE IF EXISTS "Upload" CASCADE;
 DROP TABLE IF EXISTS "ArticleHistory" CASCADE;
 DROP TABLE IF EXISTS "ArticleComment" CASCADE;
+DROP TABLE IF EXISTS "ArticleVersion" CASCADE;
 DROP TABLE IF EXISTS "Article" CASCADE;
 DROP TABLE IF EXISTS "User" CASCADE;
 
@@ -37,14 +38,32 @@ CREATE TABLE "Article" (
     "lead" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'IDEA',
+    "category" TEXT NOT NULL DEFAULT 'SPORT',
     "authorId" INTEGER NOT NULL,
     "reviewerId" INTEGER,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
+    "metaImage" TEXT,
     "scheduledAt" TIMESTAMP WITH TIME ZONE,
     "publishedAt" TIMESTAMP WITH TIME ZONE,
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "Article_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "Article_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+-- Wersje artykułu do historii zmian i rollbacków
+CREATE TABLE "ArticleVersion" (
+    "id" SERIAL PRIMARY KEY,
+    "articleId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "lead" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "versionNumber" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ArticleVersion_articleId_fkey" FOREIGN KEY ("articleId") REFERENCES "Article"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "ArticleVersion_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- Tabela komentarzy
@@ -111,6 +130,7 @@ CREATE INDEX IF NOT EXISTS "ArticleComment_articleId_idx" ON "ArticleComment"("a
 CREATE INDEX IF NOT EXISTS "ArticleHistory_articleId_idx" ON "ArticleHistory"("articleId");
 CREATE INDEX IF NOT EXISTS "Notification_userId_idx" ON "Notification"("userId");
 CREATE INDEX IF NOT EXISTS "Upload_articleId_idx" ON "Upload"("articleId");
+CREATE INDEX IF NOT EXISTS "ArticleVersion_articleId_idx" ON "ArticleVersion"("articleId");
 
 -- ==============================================================================
 -- 2. ROW LEVEL SECURITY (RLS) - BEZPIECZEŃSTWO SUPABASE
@@ -121,6 +141,7 @@ CREATE INDEX IF NOT EXISTS "Upload_articleId_idx" ON "Upload"("articleId");
 
 ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Article" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ArticleVersion" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ArticleComment" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ArticleHistory" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Notification" ENABLE ROW LEVEL SECURITY;

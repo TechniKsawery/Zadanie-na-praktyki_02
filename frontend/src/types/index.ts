@@ -39,8 +39,12 @@ export interface Article {
   lead: string;
   content: string;
   status: ArticleStatus;
+  category: string;
   authorId: number;
   reviewerId: number | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  metaImage: string | null;
   scheduledAt: string | null;
   publishedAt: string | null;
   createdAt: string;
@@ -60,8 +64,26 @@ export interface Article {
   comments?: ArticleComment[];
   history?: ArticleHistory[];
   uploads?: Upload[];
+  versions?: ArticleVersion[];
   _count?: {
     comments: number;
+  };
+}
+
+export interface ArticleVersion {
+  id: number;
+  articleId: number;
+  userId: number;
+  title: string;
+  lead: string;
+  content: string;
+  versionNumber: number;
+  createdAt: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: Role;
   };
 }
 

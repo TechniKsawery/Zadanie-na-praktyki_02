@@ -89,4 +89,10 @@ router.post('/:id/comments', validateBody(addCommentSchema), articleController.a
 // Pobieranie historii zmian statusów artykułu
 router.get('/:id/history', articleController.getHistory);
 
+// Pobieranie wersji historycznych tekstu artykułu
+router.get('/:id/versions', articleController.getArticleVersions);
+
+// Przywrócenie wersji historycznej (rollback)
+router.post('/:id/versions/:versionId/rollback', articleController.rollbackVersion);
+
 export default router;

@@ -16,7 +16,9 @@ export const createArticleSchema = z.object({
     .min(5, 'Lead (wstęp) musi mieć co najmniej 5 znaków.')
     .max(500, 'Lead nie może przekraczać 500 znaków.'),
   content: z.string()
-    .min(10, 'Treść artykułu musi mieć co najmniej 10 znaków.')
+    .min(10, 'Treść artykułu musi mieć co najmniej 10 znaków.'),
+  category: z.string()
+    .optional()
 });
 
 // Schemat dla edycji artykułu
@@ -34,7 +36,18 @@ export const updateArticleSchema = z.object({
     .optional(),
   reviewerId: z.number()
     .nullable()
-    .optional() // Pozwala na przypisanie recenzenta przez edytora
+    .optional(), // Pozwala na przypisanie recenzenta przez edytora
+  category: z.string()
+    .optional(),
+  metaTitle: z.string()
+    .nullable()
+    .optional(),
+  metaDescription: z.string()
+    .nullable()
+    .optional(),
+  metaImage: z.string()
+    .nullable()
+    .optional()
 });
 
 // Schemat dla zmiany statusu artykułu i opcjonalnego planowania publikacji

@@ -34,28 +34,50 @@ model User {
   historyEntries   ArticleHistory[]
   notifications    Notification[]
   activityLogs     ActivityLog[]
+  versions         ArticleVersion[]
 }
 
 // Tabela artykułów - kluczowy element workflowu
 model Article {
-  id          Int            @id @default(autoincrement())
-  title       String
-  lead        String
-  content     String
-  status      String         @default("IDEA") // IDEA, DRAFT, REVIEW, APPROVED, SCHEDULED, PUBLISHED, REJECTED
-  authorId    Int
-  reviewerId  Int?           // Może być przypisany recenzent
-  scheduledAt DateTime?      // Data planowanej publikacji
-  publishedAt DateTime?      // Kiedy tekst został faktycznie opublikowany
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id              Int              @id @default(autoincrement())
+  title           String
+  lead            String
+  content         String
+  status          String           @default("IDEA") // IDEA, DRAFT, REVIEW, APPROVED, SCHEDULED, PUBLISHED, REJECTED
+  category        String           @default("SPORT") // SPORT, POLITYKA, BIZNES, TECHNOLOGIE, ROZRYWKA, INNE
+  authorId        Int
+  reviewerId      Int?             // Może być przypisany recenzent
+  metaTitle       String?
+  metaDescription String?
+  metaImage       String?
+  scheduledAt     DateTime?        // Data planowanej publikacji
+  publishedAt     DateTime?        // Kiedy tekst został faktycznie opublikowany
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   // Relacje
-  author      User           @relation("AuthoredArticles", fields: [authorId], references: [id], onDelete: Cascade)
-  reviewer    User?          @relation("ReviewedArticles", fields: [reviewerId], references: [id], onDelete: SetNull)
-  comments    ArticleComment[]
-  history     ArticleHistory[]
-  uploads     Upload[]
+  author          User             @relation("AuthoredArticles", fields: [authorId], references: [id], onDelete: Cascade)
+  reviewer        User?            @relation("ReviewedArticles", fields: [reviewerId], references: [id], onDelete: SetNull)
+  comments        ArticleComment[]
+  history         ArticleHistory[]
+  uploads         Upload[]
+  versions        ArticleVersion[]
+}
+
+// Wersje artykułu do historii zmian i rollbacków
+model ArticleVersion {
+  id            Int      @id @default(autoincrement())
+  articleId     Int
+  userId        Int
+  title         String
+  lead          String
+  content       String
+  versionNumber Int
+  createdAt     DateTime @default(now())
+
+  // Relacje
+  article       Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Komentarze i uwagi redakcyjne do artykułów

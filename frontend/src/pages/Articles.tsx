@@ -35,19 +35,20 @@ const polishStatusLabels: Record<ArticleStatus, string> = {
   [ArticleStatus.REJECTED]: 'Odrzucone'
 };
 
-const getMockCategoryAndGradient = (id: number) => {
-  const categories = ['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA'];
-  const gradients = [
-    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-    'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
-    'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-    'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-    'linear-gradient(135deg, #a6c0fe 0%, #f1a7f1 100%)',
-    'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)'
-  ];
+const getCategoryAndGradient = (art: Article) => {
+  const category = art.category || 'SPORT';
+  const gradients: Record<string, string> = {
+    'SPORT': 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'POLITYKA': 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+    'KULTURA': 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+    'BIZNES': 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+    'TECHNOLOGIE': 'linear-gradient(135deg, #a6c0fe 0%, #f1a7f1 100%)',
+    'ROZRYWKA': 'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)',
+    'INNE': 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)'
+  };
   return {
-    category: categories[id % categories.length],
-    gradient: gradients[id % gradients.length]
+    category,
+    gradient: gradients[category] || gradients['SPORT']
   };
 };
 
@@ -63,12 +64,15 @@ export const Articles: React.FC = () => {
   // Stan filtrów
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
-
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  
   // Stan Modala Tworzenia
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newLead, setNewLead] = useState('');
   const [newContent, setNewContent] = useState('');
+  const [newCategory, setNewCategory] = useState('SPORT');
   const [createLoading, setCreateLoading] = useState(false);
 
   // Pobieranie artykułów z backendu
@@ -108,7 +112,8 @@ export const Articles: React.FC = () => {
       await api.post('/articles', {
         title: newTitle,
         lead: newLead,
-        content: newContent
+        content: newContent,
+        category: newCategory
       });
       
       addToast('Sukces', 'Utworzono pomysł artykułu!', 'success');
@@ -116,6 +121,7 @@ export const Articles: React.FC = () => {
       setNewTitle('');
       setNewLead('');
       setNewContent('');
+      setNewCategory('SPORT');
       fetchArticles();
     } catch (error: any) {
       addToast('Błąd', error.response?.data?.message || 'Nie udało się stworzyć artykułu.', 'error');
@@ -177,9 +183,16 @@ export const Articles: React.FC = () => {
       article.author.name.toLowerCase().includes(searchTerm.toLowerCase());
       
     const matchesStatus = selectedStatus === 'ALL' || article.status === selectedStatus;
+    const matchesAuthor = selectedAuthorId === 'ALL' || article.authorId === parseInt(selectedAuthorId);
+    const matchesCategory = selectedCategory === 'ALL' || (article.category || 'SPORT') === selectedCategory;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesAuthor && matchesCategory;
   });
+
+  // Wyciągamy unikalnych autorów z listy artykułów do dropdowna filtrów
+  const uniqueAuthors = Array.from(
+    new Map(articles.map(art => [art.author.id, art.author])).values()
+  );
 
   // Lista kolumn Kanban
   const kanbanColumns: { id: ArticleStatus; label: string; color: string }[] = [
@@ -330,21 +343,47 @@ export const Articles: React.FC = () => {
           />
         </div>
 
-        {/* Filtr statusu (widoczny głównie w widoku listy) */}
-        {viewType === 'list' && (
-          <div style={{ minWidth: '180px' }}>
-            <select 
-              className="form-input form-select"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="ALL">Wszystkie statusy</option>
-              {kanbanColumns.map(col => (
-                <option key={col.id} value={col.id}>{col.label}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Filtr statusu */}
+        <div style={{ minWidth: '160px' }}>
+          <select 
+            className="form-input form-select"
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="ALL">Wszystkie statusy</option>
+            {kanbanColumns.map(col => (
+              <option key={col.id} value={col.id}>{col.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filtr Autora */}
+        <div style={{ minWidth: '160px' }}>
+          <select 
+            className="form-input form-select"
+            value={selectedAuthorId}
+            onChange={(e) => setSelectedAuthorId(e.target.value)}
+          >
+            <option value="ALL">Wszyscy autorzy</option>
+            {uniqueAuthors.map(auth => (
+              <option key={auth.id} value={auth.id}>{auth.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filtr Kategorii */}
+        <div style={{ minWidth: '160px' }}>
+          <select 
+            className="form-input form-select"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="ALL">Wszystkie kategorie</option>
+            {['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA', 'INNE'].map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ------------------------------------------------------------------------
@@ -359,7 +398,26 @@ export const Articles: React.FC = () => {
           {kanbanColumns.map(col => {
             const colArticles = filteredArticles.filter(art => art.status === col.id);
             return (
-              <div key={col.id} className="kanban-column">
+              <div 
+                key={col.id} 
+                className="kanban-column"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--bg-kanban-column)';
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  e.currentTarget.style.backgroundColor = 'var(--bg-kanban-column)';
+                  const articleIdStr = e.dataTransfer.getData('text/plain');
+                  if (articleIdStr) {
+                    const articleId = parseInt(articleIdStr);
+                    await handleQuickStatusChange(articleId, col.id, 'Przeciągnięto kartę na tablicy Kanban');
+                  }
+                }}
+              >
                 <div className="kanban-column-header">
                   <div className="kanban-column-title">
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: col.color }} />
@@ -382,7 +440,7 @@ export const Articles: React.FC = () => {
                     </div>
                   ) : (
                     colArticles.map(art => {
-                      const { category, gradient } = getMockCategoryAndGradient(art.id);
+                      const { category, gradient } = getCategoryAndGradient(art);
                       const hasImage = art.uploads && art.uploads.length > 0 && art.uploads.some(up => up.mimetype.startsWith('image/'));
                       const imagePath = hasImage ? art.uploads?.find(up => up.mimetype.startsWith('image/'))?.filepath : null;
                       const wordCount = art.content ? art.content.split(/\s+/).length : 0;
@@ -393,6 +451,15 @@ export const Articles: React.FC = () => {
                           key={art.id} 
                           className="kanban-card"
                           onClick={() => navigate(`/articles/${art.id}`)}
+                          draggable={canQuickPromote(art)}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', art.id.toString());
+                            e.currentTarget.style.opacity = '0.5';
+                          }}
+                          onDragEnd={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                          }}
+                          style={{ cursor: canQuickPromote(art) ? 'grab' : 'pointer' }}
                         >
                           {imagePath ? (
                             <img 
@@ -540,7 +607,7 @@ export const Articles: React.FC = () => {
                 </tr>
               ) : (
                filteredArticles.map(art => {
-                const { category, gradient } = getMockCategoryAndGradient(art.id);
+                const { category, gradient } = getCategoryAndGradient(art);
                 const hasImage = art.uploads && art.uploads.length > 0 && art.uploads.some(up => up.mimetype.startsWith('image/'));
                 const imagePath = hasImage ? art.uploads?.find(up => up.mimetype.startsWith('image/'))?.filepath : null;
 
@@ -674,6 +741,21 @@ export const Articles: React.FC = () => {
                   style={{ resize: 'vertical' }}
                   disabled={createLoading}
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Kategoria artykułu</label>
+                <select 
+                  className="form-input form-select"
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  disabled={createLoading}
+                  style={{ marginBottom: '16px' }}
+                >
+                  {['SPORT', 'POLITYKA', 'KULTURA', 'BIZNES', 'TECHNOLOGIE', 'ROZRYWKA', 'INNE'].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group" style={{ marginBottom: '28px' }}>
