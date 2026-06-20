@@ -176,3 +176,16 @@ Podczas prac podjęto kilka kluczowych decyzji architektonicznych:
    *Uzasadnienie*: Zamiast suchego panelu administracyjnego statystyk, na pulpicie głównym wdrożono interaktywny podgląd strony głównej portalu sportowego. Pobiera on w czasie rzeczywistym bazowe artykuły, dając redakcji natychmiastową symulację tego, jak ich nagłówki i zdjęcia zaprezentują się na żywo w serwisie.
 6. **Wielofunkcyjny Workspace i Pełna Responsywność (RWD)**:
    *Uzasadnienie*: Przełącznik trybów podglądu (Split, Tylko edycja, Pełny podgląd) w połączeniu z responsywnym arkuszem stylów CSS rozwiązuje problem ściskania kolumn na tabletach i smartfonach, zapewniając komfortową pracę na dowolnym urządzeniu i z zachowaniem spójnej tożsamości wizualnej Wmedia.
+
+---
+
+## 🔒 Bezpieczne Kopie Zapasowe (Backupy)
+
+Projekt zawiera zaszyfrowane pliki kopii zapasowej oryginalnych zmiennych środowiskowych `.env.backup.enc` oraz `backend/.env.backup.enc`. 
+
+Aby przywrócić oryginalne połączenie z bazą Supabase, należy rozszyfrować te pliki za pomocą skryptu pomocniczego:
+```bash
+node scripts/secure-backup.js decrypt <haslo>
+```
+*Uwaga: Hasło deszyfrujące jest prywatne i nie powinno być umieszczane w tym pliku.*
+
