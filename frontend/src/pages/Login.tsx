@@ -19,6 +19,19 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    document.title = "Logowanie | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Zaloguj się do systemu automatyzacji redakcji Wmedia.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Zaloguj się do systemu automatyzacji redakcji Wmedia.";
+      document.head.appendChild(meta);
+    }
+  }, []);
+
   // Pobieramy ścieżkę, na którą użytkownik próbował wejść przed przekierowaniem
   const from = (location.state as any)?.from?.pathname || '/';
 

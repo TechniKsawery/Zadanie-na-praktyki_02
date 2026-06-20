@@ -5,9 +5,8 @@
 // bezproblemowego uruchomienia lokalnego bez dodatkowych kontenerów.
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -50,6 +49,7 @@ model Article {
   metaTitle       String?
   metaDescription String?
   metaImage       String?
+  views           Int              @default(0)
   scheduledAt     DateTime?        // Data planowanej publikacji
   publishedAt     DateTime?        // Kiedy tekst został faktycznie opublikowany
   createdAt       DateTime         @default(now())

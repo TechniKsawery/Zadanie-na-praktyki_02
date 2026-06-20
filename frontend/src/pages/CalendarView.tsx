@@ -61,6 +61,17 @@ export const CalendarView: React.FC = () => {
   useEffect(() => {
     fetchCalendarArticles();
 
+    document.title = "Kalendarz Publikacji | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Harmonogram zaplanowanych oraz opublikowanych artykułów w portalu Wmedia w ujęciu kalendarzowym.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Harmonogram zaplanowanych oraz opublikowanych artykułów w portalu Wmedia w ujęciu kalendarzowym.";
+      document.head.appendChild(meta);
+    }
+
     // Słuchamy aktualizacji realtime, aby kalendarz odświeżał się sam
     const handleRealtimeUpdate = () => {
       fetchCalendarArticles();

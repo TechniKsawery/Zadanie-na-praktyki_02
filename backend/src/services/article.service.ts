@@ -76,6 +76,20 @@ export async function getArticles(filters: {
  * komentarzami (w kolejności chronologicznej) i załączonymi plikami.
  */
 export async function getArticleById(id: number) {
+  // Zwiększamy licznik wyświetleń (views) przy każdym zapytaniu o szczegóły artykułu
+  try {
+    await prisma.article.update({
+      where: { id },
+      data: {
+        views: {
+          increment: 1
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Błąd zwiększania liczby odsłon artykułu:', err);
+  }
+
   return prisma.article.findUnique({
     where: { id },
     include: {

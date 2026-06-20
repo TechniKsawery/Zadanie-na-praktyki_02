@@ -390,10 +390,10 @@ export const Layout: React.FC = () => {
             }}
           >
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff', marginBottom: '3px' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '3px' }}>
                 {toast.title}
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#9ca3af', lineHeight: '1.3' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.3' }}>
                 {toast.message}
               </div>
             </div>

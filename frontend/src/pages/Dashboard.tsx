@@ -19,7 +19,8 @@ import {
   ShieldAlert,
   Activity,
   Newspaper,
-  TrendingUp
+  TrendingUp,
+  Eye
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -77,6 +78,17 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchStats();
 
+    document.title = "Pulpit Redakcyjny | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Główny pulpit redakcyjny z analizami, makietą portalu na żywo oraz statystykami.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Główny pulpit redakcyjny z analizami, makietą portalu na żywo oraz statystykami.";
+      document.head.appendChild(meta);
+    }
+
     // Słuchamy zdarzeń realtime do odświeżania dashboardu, gdy zajdą zmiany w bazie
     const handleRealtimeUpdate = () => {
       fetchStats();
@@ -116,6 +128,11 @@ export const Dashboard: React.FC = () => {
     count: item._count._all,
     statusKey: item.status
   })) || [];
+
+  // Wyliczanie najpopularniejszych artykułów na podstawie liczby odsłon
+  const trendingArticles = [...articles]
+    .sort((a, b) => (b.views || 0) - (a.views || 0))
+    .slice(0, 4);
 
   if (loading && !stats) {
     return (
@@ -518,6 +535,16 @@ export const Dashboard: React.FC = () => {
                   <Users size={24} />
                 </div>
               </div>
+
+              <div className="glass-panel stat-card" style={{ borderLeftColor: '#f59e0b' }}>
+                <div>
+                  <div className="stat-title">Suma Odsłon</div>
+                  <div className="stat-value">{stats.counters.views || 0}</div>
+                </div>
+                <div className="stat-icon" style={{ color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.06)' }}>
+                  <Eye size={24} />
+                </div>
+              </div>
             </div>
 
             <div className="dashboard-main-grid">
@@ -653,54 +680,38 @@ export const Dashboard: React.FC = () => {
                   Bieżące statystyki odsłon artykułów opublikowanych na stronie głównej Wmedia Sport.
                 </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  <div className="trending-item">
-                    <div className="trending-number">01</div>
-                    <div className="trending-content">
-                      <div className="trending-title">Sensacyjny transfer reprezentanta Polski stał się faktem! Znamy kwotę umowy</div>
-                      <div className="trending-meta">
-                        <span>🔥 48.2k odsłon</span>
-                        <span>⏱️ Śr. czas: 4m 32s</span>
-                        <span>💬 128 komentarzy</span>
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
+                  {trendingArticles.length === 0 ? (
+                    <div style={{ padding: '40px 0', color: 'var(--text-secondary)', textAlign: 'center', fontSize: '0.9rem' }}>
+                      Brak popularnych artykułów w bazie.
                     </div>
-                  </div>
+                  ) : (
+                    trendingArticles.map((art, index) => {
+                      const commentsCount = art._count?.comments || 0;
+                      const viewsVal = art.views >= 1000 ? `${(art.views / 1000).toFixed(1)}k` : art.views;
+                      const wordCount = art.content ? art.content.split(/\s+/).length : 0;
+                      const readTime = Math.max(1, Math.round(wordCount / 180));
 
-                  <div className="trending-item">
-                    <div className="trending-number">02</div>
-                    <div className="trending-content">
-                      <div className="trending-title">Trzęsienie ziemi w sztabie szkoleniowym. Trener zwolniony po wczorajszej porażce</div>
-                      <div className="trending-meta">
-                        <span>📈 35.8k odsłon</span>
-                        <span>⏱️ Śr. czas: 3m 15s</span>
-                        <span>💬 94 komentarzy</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="trending-item">
-                    <div className="trending-number">03</div>
-                    <div className="trending-content">
-                      <div className="trending-title">Złoty medalista igrzysk olimpijskich szczerze o emeryturze: To był idealny moment</div>
-                      <div className="trending-meta">
-                        <span>👁️ 24.1k odsłon</span>
-                        <span>⏱️ Śr. czas: 6m 20s</span>
-                        <span>💬 41 komentarzy</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="trending-item">
-                    <div className="trending-number">04</div>
-                    <div className="trending-content">
-                      <div className="trending-title">Skandaliczne zachowanie kibiców. Klub ukarany gigantyczną grzywną i walkowerem</div>
-                      <div className="trending-meta">
-                        <span>📉 19.5k odsłon</span>
-                        <span>⏱️ Śr. czas: 2m 50s</span>
-                        <span>💬 212 komentarzy</span>
-                      </div>
-                    </div>
-                  </div>
+                      return (
+                        <div 
+                          key={art.id}
+                          onClick={() => navigate(`/articles/${art.id}`)}
+                          className="trending-item"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="trending-number">0{index + 1}</div>
+                          <div className="trending-content">
+                            <div className="trending-title">{art.title}</div>
+                            <div className="trending-meta">
+                              <span>🔥 {viewsVal} odsłon</span>
+                              <span>⏱️ Śr. czas: {readTime} min</span>
+                              <span>💬 {commentsCount} komentarzy</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>

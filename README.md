@@ -1,12 +1,18 @@
-# ✍️ System Automatyzacji Pracy Redakcji i Publikacji Treści (Etap 5)
+# ✍️ System Automatyzacji Pracy Redakcji i Publikacji Treści
 
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
+
+## 📌 Cel Projektu (Portfolio)
+Ten projekt jest aplikacją Fullstack prezentującą moje umiejętności w tworzeniu złożonych systemów B2B. Architektura systemu obejmuje zarządzanie rolami (RBAC), obsługę WebSockets do powiadomień w czasie rzeczywistym oraz zautomatyzowanego workera działającego w tle. Repozytorium jest skonfigurowane tak, aby można było je uruchomić w **jeden klik** bez konieczności stawiania kontenerów bazodanowych – dzięki wbudowanej obsłudze SQLite (choć projekt jest gotowy na przejście na PostgreSQL).
+
+## 📖 O projekcie
 Projekt zaawansowanego systemu workflow dla małej redakcji lub zespołu contentowego, pozwalający na zarządzanie cyklem życia artykułów: od pomysłu (Idea), przez szkicowanie (Draft), recenzję merytoryczną (Review), aż po planowanie publikacji (Scheduled) i automatyczną publikację w portalu (Published).
 
 Projekt został zrealizowany w strukturze **Monorepo** przy użyciu **npm workspaces** i zawiera szczegółowe komentarze edukacyjne w kodzie źródłowym, opisujące przepływ danych i decyzje techniczne.
-
----
-
-## 🛠️ Stack Technologiczny
 
 ### Backend:
 - **Core**: Node.js + Express + TypeScript

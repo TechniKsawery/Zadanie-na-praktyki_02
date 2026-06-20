@@ -51,6 +51,17 @@ export const AdminPanel: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+
+    document.title = "Panel Administratora | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Zarządzaj zespołem redakcyjnym, uprawnieniami, rolami oraz logami systemowymi Wmedia.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Zarządzaj zespołem redakcyjnym, uprawnieniami, rolami oraz logami systemowymi Wmedia.";
+      document.head.appendChild(meta);
+    }
   }, []);
 
   // Zmiana roli użytkownika w bazie danych

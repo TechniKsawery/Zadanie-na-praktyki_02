@@ -19,6 +19,19 @@ export const Register: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  React.useEffect(() => {
+    document.title = "Rejestracja | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Utwórz konto autora w systemie automatyzacji redakcji Wmedia i zacznij pisać artykuły.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Utwórz konto autora w systemie automatyzacji redakcji Wmedia i zacznij pisać artykuły.";
+      document.head.appendChild(meta);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

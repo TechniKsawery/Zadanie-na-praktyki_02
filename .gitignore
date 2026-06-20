@@ -43,3 +43,8 @@ uploads/
 *.sw?
 .DS_Store
 Thumbs.db
+
+# Robocze i tymczasowe
+/scratch/
+/backend/prisma/dev.db
+/backend/prisma/dev.db-journal

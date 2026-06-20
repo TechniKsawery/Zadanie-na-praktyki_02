@@ -1,3 +1,9 @@
+// ==============================================================================
+// GŁÓWNY PUNKT WEJŚCIA FRONTENDU (Entry Point)
+// ==============================================================================
+// Inicjalizacja aplikacji React, ładowanie głównych stylów oraz montowanie 
+// komponentu App do elementu root w pliku index.html.
+
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';

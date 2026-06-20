@@ -92,6 +92,17 @@ export const Articles: React.FC = () => {
   useEffect(() => {
     fetchArticles();
 
+    document.title = "Baza Artykułów | Wmedia Redakcja";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', 'Zarządzaj cyklem życia artykułów w redakcji Wmedia - tablica Kanban i lista artykułów.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = "description";
+      meta.content = "Zarządzaj cyklem życia artykułów w redakcji Wmedia - tablica Kanban i lista artykułów.";
+      document.head.appendChild(meta);
+    }
+
     // Słuchamy zdarzeń realtime w celu automatycznego przeładowania tablicy
     const handleRealtimeUpdate = () => {
       fetchArticles();

@@ -45,6 +45,7 @@ export interface Article {
   metaTitle: string | null;
   metaDescription: string | null;
   metaImage: string | null;
+  views: number;
   scheduledAt: string | null;
   publishedAt: string | null;
   createdAt: string;
@@ -156,6 +157,7 @@ export interface DashboardStats {
     articles: number;
     comments: number;
     uploads: number;
+    views: number;
   };
   usersByRole: { role: Role; _count: { _all: number } }[];
   articlesByStatus: { status: ArticleStatus; _count: { _all: number } }[];

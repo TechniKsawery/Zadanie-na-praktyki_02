@@ -76,6 +76,7 @@ export const ArticleEdit: React.FC = () => {
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
   const [metaImage, setMetaImage] = useState('');
+  const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
   const [recoveryAvailable, setRecoveryAvailable] = useState<boolean>(false);
   const [recoveredDraft, setRecoveredDraft] = useState<{ title: string, lead: string, content: string, timestamp: number } | null>(null);
@@ -171,6 +172,19 @@ export const ArticleEdit: React.FC = () => {
       setMetaTitle(art.metaTitle || '');
       setMetaDescription(art.metaDescription || '');
       setMetaImage(art.metaImage || '');
+
+      // Aktualizacja tytułu karty i meta opisu dla SEO
+      document.title = `${art.metaTitle || art.title || 'Edycja artykułu'} | Wmedia Redakcja`;
+      const metaDesc = document.querySelector('meta[name="description"]');
+      const descVal = art.metaDescription || art.lead || 'Obszar roboczy i edycja szczegółów artykułu w systemie Wmedia.';
+      if (metaDesc) {
+        metaDesc.setAttribute('content', descVal);
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = "description";
+        meta.content = descVal;
+        document.head.appendChild(meta);
+      }
       
       if (art.scheduledAt) {
         // Formatuje datę na format odpowiedni do input[type="datetime-local"]
@@ -319,30 +333,25 @@ export const ArticleEdit: React.FC = () => {
   }, []);
 
   // Blokowanie nawigacji wewnątrz aplikacji (np. kliknięcie w link do innej strony w menu)
-  // Zabezpieczenie przed podwójnym wywołaniem w React.StrictMode
-  const isHandlingBlockRef = useRef(false);
-
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isDirtyRef.current && currentLocation.pathname !== nextLocation.pathname
   );
 
   useEffect(() => {
-    // Zabezpieczenie przed podwójnym wywołaniem w React.StrictMode
-    if (blocker.state === 'blocked' && !isHandlingBlockRef.current) {
-      isHandlingBlockRef.current = true;
-      // Małe opóźnienie, aby React zdążył zaktualizować stan przed dialogiem
-      const confirmLeave = window.confirm(
-        'Masz niezapisane zmiany!\n\nCzy na pewno chcesz opuścić tę stronę? Twoja praca zostanie zapisana lokalnie w przeglądarce, ale zmiany nie trafią do bazy danych.'
-      );
-      if (confirmLeave) {
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
-      isHandlingBlockRef.current = false;
+    if (blocker.state === 'blocked') {
+      setShowBlockerModal(true);
+    } else {
+      setShowBlockerModal(false);
     }
   }, [blocker.state]);
+
+  // Dynamiczna aktualizacja tytułu karty podczas edycji
+  useEffect(() => {
+    if (article) {
+      document.title = `${metaTitle || title || 'Edycja artykułu'} | Wmedia Redakcja`;
+    }
+  }, [title, metaTitle, article]);
 
   // Natychmiastowy autozapis z debouncem 1s przy każdej edycji
   useEffect(() => {
@@ -542,6 +551,63 @@ export const ArticleEdit: React.FC = () => {
 
   return (
     <div className="animate-slide-in">
+      {/* Blocker Modal */}
+      {showBlockerModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '500px',
+            width: '100%',
+            padding: '32px',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit' }}>
+              Masz niezapisane zmiany! ⚠️
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: '1.5' }}>
+              Czy na pewno chcesz opuścić tę stronę? Twoja praca została zapisana w pamięci podręcznej przeglądarki, ale zmiany nie zostały zsynchronizowane z bazą danych.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+              <button 
+                onClick={() => {
+                  setShowBlockerModal(false);
+                  if (blocker.reset) blocker.reset();
+                }} 
+                className="btn btn-secondary"
+                style={{ padding: '10px 18px' }}
+              >
+                Zostań i zapisz
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBlockerModal(false);
+                  if (blocker.proceed) blocker.proceed();
+                }} 
+                className="btn btn-primary"
+                style={{ padding: '10px 18px', backgroundColor: 'var(--color-primary)', color: '#fff' }}
+              >
+                Odrzuć i opuść
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Baner odzyskiwania autozapisu */}
       {recoveryAvailable && recoveredDraft && (
         <div className="glass-panel" style={{
@@ -1276,6 +1342,13 @@ export const ArticleEdit: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
                 <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Autor tekstu:</span>
                 <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{article.author.name}</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Liczba odsłon:</span>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  👁️ {article.views || 0}
+                </span>
               </div>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>

@@ -36,6 +36,12 @@ export async function getStats(_req: Request, res: Response) {
     const articleCount = await prisma.article.count();
     const commentCount = await prisma.articleComment.count();
     const uploadCount = await prisma.upload.count();
+    const totalViewsRes = await prisma.article.aggregate({
+      _sum: {
+        views: true
+      }
+    });
+    const totalViews = totalViewsRes._sum.views || 0;
 
     // 4. Ranking najaktywniejszych autorów (liczba napisanych tekstów)
     const topAuthors = await prisma.user.findMany({
@@ -78,7 +84,8 @@ export async function getStats(_req: Request, res: Response) {
           users: userCount,
           articles: articleCount,
           comments: commentCount,
-          uploads: uploadCount
+          uploads: uploadCount,
+          views: totalViews
         },
         usersByRole,
         articlesByStatus,

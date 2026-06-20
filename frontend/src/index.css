@@ -1022,7 +1022,7 @@ td {
 /* Klasy pomocnicze dla siatek grid w Dashboard */
 .dashboard-main-grid {
   display: grid;
-  grid-template-columns: 7fr 4fr;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
   gap: 24px;
   margin-bottom: 32px;
   align-items: stretch;
@@ -1030,14 +1030,14 @@ td {
 
 .dashboard-bottom-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
 }
 
 /* Klasy pomocnicze dla siatki w edytorze */
 .article-edit-container {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 32px;
   align-items: flex-start;
 }
@@ -1045,7 +1045,7 @@ td {
 /* Klasa dla makiety głównej w Dashboard */
 .portal-main-grid {
   display: grid;
-  grid-template-columns: 7.5fr 4.5fr;
+  grid-template-columns: minmax(0, 7.5fr) minmax(0, 4.5fr);
   gap: 24px;
 }
 
