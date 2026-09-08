@@ -1,4 +1,4 @@
-# ✍️ System Automatyzacji Pracy Redakcji i Publikacji Treści
+# ✍️ System Automatyzacji Pracy Redakcji i Publikacji Treści / Editorial Workflow and Content Publishing Automation System
 
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -6,11 +6,15 @@
 ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
 
+---
+
+# 🇵🇱 Wersja Polska
+
 ## 📌 Cel Projektu (Portfolio)
-Ten projekt jest aplikacją Fullstack prezentującą moje umiejętności w tworzeniu złożonych systemów B2B. Architektura systemu obejmuje zarządzanie rolami (RBAC), obsługę WebSockets do powiadomień w czasie rzeczywistym oraz zautomatyzowanego workera działającego w tle. Repozytorium jest skonfigurowane tak, aby można było je uruchomić w **jeden klik** bez konieczności stawiania kontenerów bazodanowych – dzięki wbudowanej obsłudze SQLite (choć projekt jest gotowy na przejście na PostgreSQL).
+Ten projekt jest aplikacją Fullstack prezentującą moje umiejętności w tworzeniu złożonych systemów B2B. Architektura systemu obejmuje zarządzanie rolami (RBAC), obsługę WebSockets do powiadomień realtime, maszynę stanów do kontroli workflow oraz pełny frontend i backend oparty o nowoczesny stack technologiczny.
 
 ## 📖 O projekcie
-Projekt zaawansowanego systemu workflow dla małej redakcji lub zespołu contentowego, pozwalający na zarządzanie cyklem życia artykułów: od pomysłu (Idea), przez szkicowanie (Draft), recenzję merytoryczną (Review), aż po planowanie publikacji (Scheduled) i automatyczną publikację w portalu (Published).
+Projekt zaawansowanego systemu workflow dla małej redakcji lub zespołu contentowego, pozwalający na zarządzanie cyklem życia artykułów: od pomysłu (Idea), przez szkicowanie (Draft), recenzję (Review), aż po planowanie i publikację (Scheduled / Published).
 
 Projekt został zrealizowany w strukturze **Monorepo** przy użyciu **npm workspaces** i zawiera szczegółowe komentarze edukacyjne w kodzie źródłowym, opisujące przepływ danych i decyzje techniczne.
 
@@ -23,7 +27,7 @@ Projekt został zrealizowany w strukturze **Monorepo** przy użyciu **npm worksp
 
 ### Frontend:
 - **Core**: React + Vite + TypeScript
-- **Styling**: Nowoczesny **Vanilla CSS** (motyw jasny - light mode, płaski portalowy styl z czerwonymi akcentami, ciemny Slate Navy sidebar, pełna responsywność RWD na telefonach/tabletach, płynne mikro-animacje).
+- **Styling**: Nowoczesny **Vanilla CSS** (motyw jasny - light mode, płaski portalowy styl z czerwonymi akcentami, ciemny Slate Navy sidebar, pełna responsywność RWD na telefonach/tabletach, płynne animacje).
 - **Biblioteka ikon**: Lucide React
 - **Wykresy**: Recharts (statystyki artykułów na Dashboardzie)
 - **Komunikacja z API**: Axios z interceptorem automatycznie wstrzykującym JWT Bearer Token.
@@ -34,7 +38,7 @@ Projekt został zrealizowany w strukturze **Monorepo** przy użyciu **npm worksp
 
 Struktura monorepo dzieli się na dwa główne pakiety deweloperskie:
 
-```
+```text
 / (Główny katalog)
 ├── package.json (npm workspaces, skrypty uruchomieniowe)
 ├── docker-compose.yml (konfiguracja PostgreSQL i Redis do wyboru)
@@ -165,23 +169,23 @@ W pliku `backend/src/jobs/worker.ts` zaimplementowano proces działający w tle 
 Podczas prac podjęto kilka kluczowych decyzji architektonicznych:
 
 1. **Zastosowanie SQLite dla trybu deweloperskiego**:
-   *Uzasadnienie*: Uruchomienie Dockera i pobieranie zewnętrznych obrazów PostgreSQL w zablokowanym środowisku sieciowym (sandboksie) lub na maszynach bez zainstalowanego Docker Desktop kończy się błędem (`ENOTFOUND`). SQLite działa w pliku lokalnym bez zewnętrznych instalacji, a dzięki warstwie abstrakcji Prisma, migracja na PostgreSQL produkcyjny sprowadza się wyłącznie do zmiany zmiennej `provider = "postgresql"` w pliku `schema.prisma`.
+   *Uzasadnienie*: Uruchomienie Dockera i pobieranie zewnętrznych obrazów PostgreSQL w zablokowanym środowisku sieciowym (sandboksie) lub na maszynach bez zainstalowanego Docker Desktop kończy się problemami. SQLite zapewnia prosty start bez dodatkowej konfiguracji.
 2. **Haszowanie PBKDF2 zamiast biblioteki bcrypt**:
-   *Uzasadnienie*: Popularna biblioteka `bcrypt` zawiera natywne powiązania C++ (native bindings). Jej kompilacja (`node-gyp`) w systemach bez zainstalowanych narzędzi kompilacji (Visual Studio Build Tools, Python) lub w środowiskach offline (brak możliwości pobrania nagłówków Node) kończy się błędem krytycznym instalacji npm. Zastąpienie jej wbudowanym modułem `crypto` i standardem **PBKDF2-SHA512** (z 10 000 iteracji i losową solą) gwarantuje 100% niezawodność, wysokie bezpieczeństwo kryptograficzne oraz instalację paczek bez błędów.
+   *Uzasadnienie*: Popularna biblioteka `bcrypt` zawiera natywne powiązania C++ (native bindings). Jej kompilacja (`node-gyp`) w systemach bez zainstalowanych narzędzi kompilacji może sprawiać problemy. PBKDF2 z modułu `crypto` jest dostępne natywnie w Node.js.
 3. **Autorski parser Markdown na frontendzie**:
-   *Uzasadnienie*: Wdrożenie podglądu tekstu bez pobierania zewnętrznych bibliotek (jak react-markdown) ogranicza wielkość bundlera i uniezależnia projekt od pobierania z npm. Napisany w JavaScript parser wykorzystuje regex do konwersji najważniejszych znaczników (`#`, `##`, `**`, `*`, list `-` oraz bloków kodu \`\`\`), zapewniając bezpieczną konwersję znaków przed renderowaniem (ochrona przed XSS).
+   *Uzasadnienie*: Wdrożenie podglądu tekstu bez pobierania zewnętrznych bibliotek ogranicza wielkość bundlera i uniezależnia projekt od pobierania z npm.
 4. **WebSocket Room Routing w Socket.IO**:
-   *Uzasadnienie*: Zamiast wysyłać komunikaty (broadcast) do wszystkich użytkowników o zmianie statusu (co marnuje pasmo), Socket.IO na backendzie przypisuje zalogowanych użytkowników do dedykowanych pokoi `user:${id}` oraz `role:${role}`. Pozwala to na precyzyjne kierowanie powiadomień merytorycznych wyłącznie do zainteresowanych osób (np. autor dowiaduje się o akceptacji swojego tekstu bezpośrednio).
+   *Uzasadnienie*: Zamiast wysyłać komunikaty do wszystkich użytkowników, backend przypisuje zalogowanych użytkowników do dedykowanych pokojów, co ogranicza ruch i poprawia skalowalność.
 5. **Makieta Strony Głównej Portalu (Wmedia Live)**:
-   *Uzasadnienie*: Zamiast suchego panelu administracyjnego statystyk, na pulpicie głównym wdrożono interaktywny podgląd strony głównej portalu sportowego. Pobiera on w czasie rzeczywistym bazowe artykuły, dając redakcji natychmiastową symulację tego, jak ich nagłówki i zdjęcia zaprezentują się na żywo w serwisie.
+   *Uzasadnienie*: Zamiast suchego panelu administracyjnego statystyk, na pulpicie głównym wdrożono interaktywny podgląd strony głównej portalu sportowego.
 6. **Wielofunkcyjny Workspace i Pełna Responsywność (RWD)**:
-   *Uzasadnienie*: Przełącznik trybów podglądu (Split, Tylko edycja, Pełny podgląd) w połączeniu z responsywnym arkuszem stylów CSS rozwiązuje problem ściskania kolumn na tabletach i smartfonach, zapewniając komfortową pracę na dowolnym urządzeniu i z zachowaniem spójnej tożsamości wizualnej Wmedia.
+   *Uzasadnienie*: Przełącznik trybów podglądu w połączeniu z responsywnym arkuszem stylów CSS rozwiązuje problem ściskania kolumn na tabletach i smartfonach.
 
 ---
 
 ## 🔒 Bezpieczne Kopie Zapasowe (Backupy)
 
-Projekt zawiera zaszyfrowane pliki kopii zapasowej oryginalnych zmiennych środowiskowych `.env.backup.enc` oraz `backend/.env.backup.enc`. 
+Projekt zawiera zaszyfrowane pliki kopii zapasowej oryginalnych zmiennych środowiskowych `.env.backup.enc` oraz `backend/.env.backup.enc`.
 
 Aby przywrócić oryginalne połączenie z bazą Supabase, należy rozszyfrować te pliki za pomocą skryptu pomocniczego:
 ```bash
@@ -189,3 +193,189 @@ node scripts/secure-backup.js decrypt <haslo>
 ```
 *Uwaga: Hasło deszyfrujące jest prywatne i nie powinno być umieszczane w tym pliku.*
 
+---
+
+# 🇬🇧 English Version
+
+## 📌 Project Goal (Portfolio)
+This project is a full-stack application showcasing my skills in building complex B2B systems. The system architecture includes role management (RBAC), WebSocket support for realtime notifications, a state machine for workflow control, and a complete frontend and backend based on a modern technology stack.
+
+## 📖 About the Project
+An advanced workflow system for a small editorial team or content group, allowing management of the article lifecycle: from Idea, through Draft and Review, to scheduling and publishing (Scheduled / Published).
+
+The project was built as a **Monorepo** using **npm workspaces** and includes detailed educational comments in the source code, describing the data flow and technical decisions.
+
+### Backend:
+- **Core**: Node.js + Express + TypeScript
+- **Database & ORM**: SQLite + Prisma ORM (enables smooth local setup without external dependencies). The project can be switched to PostgreSQL immediately in `schema.prisma`.
+- **Realtime Communication**: Socket.IO (notifications about comments and status changes)
+- **Task Scheduler (Worker)**: A periodic worker built into the backend process that checks scheduled publications in the background every 30 seconds.
+- **Security**: Password hashing with the native `crypto` module (PBKDF2-SHA512 standard) + **JWT** authentication tokens (JSON Web Tokens).
+
+### Frontend:
+- **Core**: React + Vite + TypeScript
+- **Styling**: Modern **Vanilla CSS** (light mode, flat portal style with red accents, dark Slate Navy sidebar, full responsive design for phones/tablets, smooth animations).
+- **Icon Library**: Lucide React
+- **Charts**: Recharts (article statistics on the Dashboard)
+- **API Communication**: Axios with an interceptor that automatically injects the JWT Bearer token.
+
+---
+
+## 📂 Project Architecture and Structure
+
+The monorepo is divided into two main development packages:
+
+```text
+/ (Root directory)
+├── package.json (npm workspaces, startup scripts)
+├── docker-compose.yml (configuration for PostgreSQL and Redis as options)
+├── README.md (architecture documentation and instructions)
+├── .env (secrets, environment variables - not committed to git)
+├── .env.example (environment variables template)
+├── .gitignore (ignore rules for folders and secrets)
+│
+├── backend/
+│   ├── package.json (backend dependencies)
+│   ├── tsconfig.json (TypeScript compiler settings)
+│   ├── prisma/
+│   │   ├── schema.prisma (SQLite/Postgres database schema definition)
+│   │   └── seed.ts (automatic test data seeding script)
+│   └── src/
+│       ├── index.ts (Express, Socket.IO, and worker bootstrap)
+│       ├── routes/ (API endpoint definitions)
+│       ├── controllers/ (HTTP request and response controllers)
+│       ├── services/ (business logic - auth, articles, crypto)
+│       ├── repositories/ (Prisma client)
+│       ├── middlewares/ (JWT authentication, role checks, validation)
+│       ├── validators/ (Zod input validation schemas)
+│       ├── jobs/ (background worker - automatic publishing)
+│       └── types/ (TypeScript role/status enums and interfaces)
+│
+└── frontend/
+    ├── package.json (frontend dependencies)
+    ├── tsconfig.json (TypeScript configuration)
+    ├── vite.config.ts (Vite bundler configuration)
+    ├── index.html (HTML entrypoint, Outfit and Inter fonts)
+    └── src/
+        ├── main.tsx (React entry point)
+        ├── App.tsx (router, route mapping, role guards)
+        ├── index.css (style base, status colors, animations)
+        ├── context/ (global auth state and Socket.IO/Toasts)
+        ├── guards/ (AuthGuard and RoleGuard)
+        ├── layouts/ (layout with sidebar and notifications)
+        ├── pages/ (Dashboard, Articles, ArticleEdit, Calendar, AdminPanel)
+        ├── services/ (Axios API client)
+        └── types/ (TypeScript interfaces)
+```
+
+---
+
+## 🚀 Step-by-Step Setup Instructions
+
+### 1. Clone and Install Dependencies
+Install dependencies for the entire repository with one command in the root directory:
+```bash
+npm install
+```
+*Thanks to npm workspaces, the package manager will automatically install dependencies for both backend and frontend.*
+
+### 2. Prepare the Database
+The project is configured for SQLite, so the database file will be created locally automatically. Generate the Prisma client and push the tables:
+```bash
+# In the backend/ directory or in the root directory
+npx prisma db push --schema=backend/prisma/schema.prisma
+```
+
+### 3. Seed the Database
+Run the seeding script that creates test accounts (for each role) and sample articles, comments, and logs:
+```bash
+# In the backend/ directory or in the root directory
+npx prisma db seed --schema=backend/prisma/schema.prisma
+```
+
+### 4. Run the Application (Backend + Frontend)
+Start both development servers with one command from the root directory:
+```bash
+npm run dev
+```
+- **Frontend** will be available at: `http://localhost:5173`
+- **Backend** will be available at: `http://localhost:5000`
+
+---
+
+## 👥 Test Accounts (Seeding)
+
+All accounts use the same password: `password123`
+- **Author**: `author@wmedia.pl` (Can create ideas, write drafts, and send them for review)
+- **Reviewer**: `reviewer@wmedia.pl` (Can review articles in REVIEW status: approve, reject, or send back for fixes)
+- **Editor**: `editor@wmedia.pl` (Can schedule APPROVED articles and publish them manually)
+- **Admin**: `admin@wmedia.pl` (Can do everything: edit any text, change statuses, manage roles in the admin panel)
+
+---
+
+## ⚙️ Editorial Workflow (State Machine)
+
+A secure status transition mechanism (State Machine) has been implemented on the backend. Every status change validates the role and article ownership:
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDEA : Author creates idea
+    IDEA --> DRAFT : Author clicks "Write draft" (own articles only)
+    DRAFT --> REVIEW : Author sends for review (own articles only)
+    REVIEW --> DRAFT : Reviewer sends back for fixes (with comments)
+    REVIEW --> REJECTED : Reviewer rejects completely
+    REJECTED --> DRAFT : Author clicks "Fix text" (own articles only)
+    REVIEW --> APPROVED : Reviewer approves the text
+    APPROVED --> SCHEDULED : Editor schedules a publication date (future date required)
+    APPROVED --> PUBLISHED : Editor publishes manually right away
+    SCHEDULED --> PUBLISHED : Automatically by the Worker (scheduledAt <= now)
+    SCHEDULED --> DRAFT : Editor withdraws from publication
+    PUBLISHED --> [*]
+```
+
+### Security Rules:
+- **Author** can edit only their own articles, and only when they are in IDEA, DRAFT, or REJECTED status. They cannot edit someone else’s articles or change statuses after sending them for review.
+- **Reviewer** cannot edit article content (only adds comments), and can evaluate only texts submitted in REVIEW status.
+- **Editor** handles distribution: scheduling publications and marking them as published.
+- **Admin** has full rights (master bypass) for emergency purposes.
+
+---
+
+## 🤖 Background Worker (Publishing Automation)
+
+The file `backend/src/jobs/worker.ts` contains a background process running inside the Node.js server:
+- Every **30 seconds** it checks the database for articles with `SCHEDULED` status whose publication time (`scheduledAt`) has already passed.
+- It performs a transaction: changes the status to `PUBLISHED`, sets the actual publication time (`publishedAt = now`), adds an entry to the status history, and writes a system activity log.
+- It creates a notification for the author in the database.
+- It sends a realtime signal via **Socket.IO** to the author’s browser, allowing the panel to instantly show an animated toast message and refresh the Kanban board.
+
+---
+
+## 💡 Technical Decisions and Rationale
+
+During development, several key architectural decisions were made:
+
+1. **Using SQLite for development mode**:
+   *Reasoning*: Running Docker and pulling external PostgreSQL images in restricted network environments (sandbox) or on machines without Docker Desktop can cause issues. SQLite provides a simple setup without extra configuration.
+2. **Using PBKDF2 instead of bcrypt**:
+   *Reasoning*: The popular `bcrypt` library depends on native C++ bindings. Its compilation (`node-gyp`) can be problematic on systems without the required build tools. PBKDF2 from the `crypto` module is natively available in Node.js.
+3. **Custom Markdown parser on the frontend**:
+   *Reasoning*: Implementing preview without external libraries reduces bundle size and avoids npm dependency overhead.
+4. **WebSocket Room Routing in Socket.IO**:
+   *Reasoning*: Instead of broadcasting messages to all users, the backend assigns logged-in users to dedicated rooms, reducing traffic and improving scalability.
+5. **Portal Homepage Mockup (Wmedia Live)**:
+   *Reasoning*: Instead of a plain stats admin panel, the dashboard includes an interactive preview of a sports portal homepage.
+6. **Multi-purpose Workspace and Full Responsiveness (RWD)**:
+   *Reasoning*: The preview mode switch combined with responsive CSS solves the problem of cramped columns on tablets and smartphones.
+
+---
+
+## 🔒 Secure Backups
+
+The project contains encrypted backup files of the original environment variables: `.env.backup.enc` and `backend/.env.backup.enc`.
+
+To restore the original Supabase database connection, decrypt these files using the helper script:
+```bash
+node scripts/secure-backup.js decrypt <password>
+```
+*Note: The decryption password is private and should not be placed in this file.*
